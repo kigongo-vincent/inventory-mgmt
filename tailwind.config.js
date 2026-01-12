@@ -8,6 +8,20 @@ module.exports = {
   presets: [require('nativewind/preset')],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['Poppins-Regular', 'system-ui', 'sans-serif'],
+        'poppins-light': ['Poppins-Light', 'system-ui', 'sans-serif'],
+        'poppins-regular': ['Poppins-Regular', 'system-ui', 'sans-serif'],
+        'poppins-medium': ['Poppins-Medium', 'system-ui', 'sans-serif'],
+        'poppins-semibold': ['Poppins-SemiBold', 'system-ui', 'sans-serif'],
+        'poppins-bold': ['Poppins-Bold', 'system-ui', 'sans-serif'],
+      },
+      fontSize: {
+        base: ['13.5px', { lineHeight: '20px' }],
+        'small': ['12px', { lineHeight: '18px' }],
+        'normal': ['14px', { lineHeight: '21px' }],
+        'large': ['18px', { lineHeight: '27px' }],
+      },
       colors: {
         border: withOpacity('border'),
         input: withOpacity('input'),

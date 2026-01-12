@@ -4,58 +4,58 @@ const IOS_SYSTEM_COLORS = {
   white: 'rgb(255, 255, 255)',
   black: 'rgb(0, 0, 0)',
   light: {
-    grey6: 'rgb(242, 242, 247)',
-    grey5: 'rgb(230, 230, 235)',
-    grey4: 'rgb(210, 210, 215)',
-    grey3: 'rgb(199, 199, 204)',
-    grey2: 'rgb(175, 176, 180)',
-    grey: 'rgb(142, 142, 147)',
-    background: 'rgb(242, 242, 247)',
-    foreground: 'rgb(0, 0, 0)',
-    root: 'rgb(255, 255, 255)',
-    card: 'rgb(255, 255, 255)',
-    cardForeground: 'rgb(8, 28, 30)',
-    popover: 'rgb(230, 230, 235)',
-    popoverForeground: 'rgb(0, 0, 0)',
-    destructive: 'rgb(255, 56, 43)',
-    primary: 'rgb(0, 123, 254)',
+    grey6: 'rgb(250, 250, 250)', // Very light gray for subtle variations
+    grey5: 'rgb(245, 245, 245)', // Light gray
+    grey4: 'rgb(235, 235, 235)', // Light gray for borders
+    grey3: 'rgb(200, 200, 200)', // Medium gray
+    grey2: 'rgb(120, 120, 120)', // Dark gray
+    grey: 'rgb(70, 70, 70)', // Darker gray
+    background: 'rgb(255, 255, 255)', // Pure white
+    foreground: 'rgb(0, 0, 0)', // Black
+    root: 'rgb(255, 255, 255)', // Pure white
+    card: 'rgb(255, 255, 255)', // Pure white
+    cardForeground: 'rgb(0, 0, 0)', // Black
+    popover: 'rgb(255, 255, 255)', // Pure white
+    popoverForeground: 'rgb(0, 0, 0)', // Black
+    destructive: 'rgb(186, 26, 32)', // Material error
+    primary: 'rgb(29, 185, 84)', // Keep same as dark mode (Spotify green)
     primaryForeground: 'rgb(255, 255, 255)',
-    secondary: 'rgb(45, 175, 231)',
+    secondary: 'rgb(103, 80, 164)', // Material secondary
     secondaryForeground: 'rgb(255, 255, 255)',
-    muted: 'rgb(175, 176, 180)',
-    mutedForeground: 'rgb(142, 142, 147)',
-    accent: 'rgb(255, 40, 84)',
+    muted: 'rgb(245, 245, 245)', // Very light gray
+    mutedForeground: 'rgb(120, 120, 120)', // Medium gray
+    accent: 'rgb(103, 80, 164)', // Material tertiary
     accentForeground: 'rgb(255, 255, 255)',
-    border: 'rgb(230, 230, 235)',
-    input: 'rgb(210, 210, 215)',
-    ring: 'rgb(230, 230, 235)',
+    border: 'rgb(235, 235, 235)', // Light gray for subtle borders
+    input: 'rgb(250, 250, 250)', // Very light gray for input fields
+    ring: 'rgb(29, 185, 84)', // Keep same as dark mode
   },
   dark: {
-    grey6: 'rgb(21, 21, 24)',
-    grey5: 'rgb(40, 40, 42)',
-    grey4: 'rgb(55, 55, 57)',
-    grey3: 'rgb(70, 70, 73)',
-    grey2: 'rgb(99, 99, 102)',
-    grey: 'rgb(142, 142, 147)',
-    background: 'rgb(0, 0, 0)',
+    grey6: 'rgb(24, 24, 24)',
+    grey5: 'rgb(40, 40, 40)',
+    grey4: 'rgb(42, 42, 42)',
+    grey3: 'rgb(70, 70, 70)',
+    grey2: 'rgb(99, 99, 99)',
+    grey: 'rgb(167, 167, 167)',
+    background: 'rgb(18, 18, 18)', // Spotify dark background
     foreground: 'rgb(255, 255, 255)',
-    root: 'rgb(0, 0, 0)',
-    card: 'rgb(28, 28, 30)',
+    root: 'rgb(18, 18, 18)',
+    card: 'rgb(24, 24, 24)', // Spotify card color
     cardForeground: 'rgb(255, 255, 255)',
-    popover: 'rgb(40, 40, 42)',
+    popover: 'rgb(40, 40, 40)',
     popoverForeground: 'rgb(255, 255, 255)',
-    destructive: 'rgb(254, 67, 54)',
-    primary: 'rgb(3, 133, 255)',
+    destructive: 'rgb(255, 56, 43)',
+    primary: 'rgb(29, 185, 84)', // Spotify green
     primaryForeground: 'rgb(255, 255, 255)',
-    secondary: 'rgb(100, 211, 254)',
+    secondary: 'rgb(29, 185, 84)',
     secondaryForeground: 'rgb(255, 255, 255)',
-    muted: 'rgb(70, 70, 73)',
-    mutedForeground: 'rgb(142, 142, 147)',
-    accent: 'rgb(255, 52, 95)',
+    muted: 'rgb(167, 167, 167)',
+    mutedForeground: 'rgb(167, 167, 167)',
+    accent: 'rgb(29, 185, 84)',
     accentForeground: 'rgb(255, 255, 255)',
-    border: 'rgb(40, 40, 42)',
-    input: 'rgb(55, 55, 57)',
-    ring: 'rgb(40, 40, 42)',
+    border: 'rgb(40, 40, 40)',
+    input: 'rgb(40, 40, 40)',
+    ring: 'rgb(29, 185, 84)',
   },
 } as const;
 
@@ -63,58 +63,58 @@ const ANDROID_COLORS = {
   white: 'rgb(255, 255, 255)',
   black: 'rgb(0, 0, 0)',
   light: {
-    grey6: 'rgb(249, 249, 255)',
-    grey5: 'rgb(215, 217, 228)',
-    grey4: 'rgb(193, 198, 215)',
-    grey3: 'rgb(113, 119, 134)',
-    grey2: 'rgb(65, 71, 84)',
-    grey: 'rgb(24, 28, 35)',
-    background: 'rgb(249, 249, 255)',
-    foreground: 'rgb(0, 0, 0)',
-    root: 'rgb(255, 255, 255)',
-    card: 'rgb(255, 255, 255)',
-    cardForeground: 'rgb(24, 28, 35)',
-    popover: 'rgb(215, 217, 228)',
-    popoverForeground: 'rgb(0, 0, 0)',
-    destructive: 'rgb(186, 26, 26)',
-    primary: 'rgb(0, 112, 233)',
+    grey6: 'rgb(250, 250, 250)', // Very light gray for subtle variations
+    grey5: 'rgb(245, 245, 245)', // Light gray
+    grey4: 'rgb(235, 235, 235)', // Light gray for borders
+    grey3: 'rgb(200, 200, 200)', // Medium gray
+    grey2: 'rgb(120, 120, 120)', // Dark gray
+    grey: 'rgb(70, 70, 70)', // Darker gray
+    background: 'rgb(255, 255, 255)', // Pure white
+    foreground: 'rgb(0, 0, 0)', // Black
+    root: 'rgb(255, 255, 255)', // Pure white
+    card: 'rgb(255, 255, 255)', // Pure white
+    cardForeground: 'rgb(0, 0, 0)', // Black
+    popover: 'rgb(255, 255, 255)', // Pure white
+    popoverForeground: 'rgb(0, 0, 0)', // Black
+    destructive: 'rgb(186, 26, 32)', // Material error
+    primary: 'rgb(29, 185, 84)', // Keep same as dark mode (Spotify green)
     primaryForeground: 'rgb(255, 255, 255)',
-    secondary: 'rgb(176, 201, 255)',
-    secondaryForeground: 'rgb(20, 55, 108)',
-    muted: 'rgb(193, 198, 215)',
-    mutedForeground: 'rgb(65, 71, 84)',
-    accent: 'rgb(169, 73, 204)',
+    secondary: 'rgb(103, 80, 164)', // Material secondary
+    secondaryForeground: 'rgb(255, 255, 255)',
+    muted: 'rgb(245, 245, 245)', // Very light gray
+    mutedForeground: 'rgb(120, 120, 120)', // Medium gray
+    accent: 'rgb(103, 80, 164)', // Material tertiary
     accentForeground: 'rgb(255, 255, 255)',
-    border: 'rgb(215, 217, 228)',
-    input: 'rgb(210, 210, 215)',
-    ring: 'rgb(215, 217, 228)',
+    border: 'rgb(235, 235, 235)', // Light gray for subtle borders
+    input: 'rgb(250, 250, 250)', // Very light gray for input fields
+    ring: 'rgb(29, 185, 84)', // Keep same as dark mode
   },
   dark: {
-    grey6: 'rgb(16, 19, 27)',
-    grey5: 'rgb(39, 42, 50)',
-    grey4: 'rgb(49, 53, 61)',
-    grey3: 'rgb(54, 57, 66)',
-    grey2: 'rgb(139, 144, 160)',
-    grey: 'rgb(193, 198, 215)',
-    background: 'rgb(0, 0, 0)',
+    grey6: 'rgb(24, 24, 24)',
+    grey5: 'rgb(40, 40, 40)',
+    grey4: 'rgb(42, 42, 42)',
+    grey3: 'rgb(70, 70, 70)',
+    grey2: 'rgb(99, 99, 99)',
+    grey: 'rgb(167, 167, 167)',
+    background: 'rgb(18, 18, 18)', // Spotify dark background
     foreground: 'rgb(255, 255, 255)',
-    root: 'rgb(0, 0, 0)',
-    card: 'rgb(16, 19, 27)',
-    cardForeground: 'rgb(224, 226, 237)',
-    popover: 'rgb(39, 42, 50)',
-    popoverForeground: 'rgb(224, 226, 237)',
-    destructive: 'rgb(147, 0, 10)',
-    primary: 'rgb(3, 133, 255)',
+    root: 'rgb(18, 18, 18)',
+    card: 'rgb(24, 24, 24)', // Spotify card color
+    cardForeground: 'rgb(255, 255, 255)',
+    popover: 'rgb(40, 40, 40)',
+    popoverForeground: 'rgb(255, 255, 255)',
+    destructive: 'rgb(255, 56, 43)',
+    primary: 'rgb(29, 185, 84)', // Spotify green
     primaryForeground: 'rgb(255, 255, 255)',
-    secondary: 'rgb(28, 60, 114)',
-    secondaryForeground: 'rgb(189, 209, 255)',
-    muted: 'rgb(216, 226, 255)',
-    mutedForeground: 'rgb(139, 144, 160)',
-    accent: 'rgb(83, 0, 111)',
-    accentForeground: 'rgb(238, 177, 255)',
-    border: 'rgb(39, 42, 50)',
-    input: 'rgb(55, 55, 57)',
-    ring: 'rgb(39, 42, 50)',
+    secondary: 'rgb(29, 185, 84)',
+    secondaryForeground: 'rgb(255, 255, 255)',
+    muted: 'rgb(167, 167, 167)',
+    mutedForeground: 'rgb(167, 167, 167)',
+    accent: 'rgb(29, 185, 84)',
+    accentForeground: 'rgb(255, 255, 255)',
+    border: 'rgb(40, 40, 40)',
+    input: 'rgb(40, 40, 40)',
+    ring: 'rgb(29, 185, 84)',
   },
 } as const;
 

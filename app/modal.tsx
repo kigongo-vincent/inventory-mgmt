@@ -14,7 +14,7 @@ export default function ModalScreen() {
       />
       <View className="pb-safe flex-1 items-center justify-center gap-1 px-12">
         <Icon name="doc.badge.plus" size={42} color={colors.grey} />
-        <Text variant="title3" className="pb-1 text-center font-semibold">
+        <Text variant="title3" className="pb-1 text-center">
           NativewindUI
         </Text>
         <Text color="tertiary" variant="subhead" className="pb-4 text-center">

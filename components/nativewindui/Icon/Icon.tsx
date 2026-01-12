@@ -1,11 +1,8 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import {
-  SF_SYMBOLS_TO_MATERIAL_COMMUNITY_ICONS,
-  SF_SYMBOLS_TO_MATERIAL_ICONS,
-} from 'rn-icon-mapper';
 
 import type { IconProps } from './types';
+import { SF_TO_MATERIAL_ICONS } from './iconMappings';
 
 import { useColorScheme } from '@/lib/useColorScheme';
 
@@ -15,44 +12,44 @@ function Icon({
   materialIcon,
   sfSymbol: _sfSymbol,
   size = 24,
+  color,
   ...props
 }: IconProps) {
   const { colors } = useColorScheme();
-  const defaultColor = colors.foreground;
+  const iconColor = color ?? colors.foreground;
 
+  // If explicit Material icon props are provided, use them directly
   if (materialCommunityIcon) {
     return (
       <MaterialCommunityIcons
         size={size}
-        color={defaultColor}
+        color={iconColor}
         {...props}
         {...materialCommunityIcon}
       />
     );
   }
   if (materialIcon) {
-    return <MaterialIcons size={size} color={defaultColor} {...props} {...materialIcon} />;
+    return <MaterialIcons size={size} color={iconColor} {...props} {...materialIcon} />;
   }
-  const materialCommunityIconName =
-    SF_SYMBOLS_TO_MATERIAL_COMMUNITY_ICONS[
-      name as keyof typeof SF_SYMBOLS_TO_MATERIAL_COMMUNITY_ICONS
-    ];
-  if (materialCommunityIconName) {
-    return (
-      <MaterialCommunityIcons
-        name={materialCommunityIconName}
-        size={size}
-        color={defaultColor}
-        {...props}
-      />
-    );
+  
+  // Map SF Symbol names to Material Community Icons
+  if (name) {
+    const materialIconName = SF_TO_MATERIAL_ICONS[name];
+    if (materialIconName) {
+      return (
+        <MaterialCommunityIcons
+          name={materialIconName as any}
+          size={size}
+          color={iconColor}
+          {...props}
+        />
+      );
+    }
   }
-  const materialIconName =
-    SF_SYMBOLS_TO_MATERIAL_ICONS[name as keyof typeof SF_SYMBOLS_TO_MATERIAL_ICONS];
-  if (materialIconName) {
-    return <MaterialIcons name={materialIconName} size={size} color={defaultColor} {...props} />;
-  }
-  return <MaterialCommunityIcons name="help" size={size} color={defaultColor} {...props} />;
+  
+  // Fallback to help icon if name not found
+  return <MaterialCommunityIcons name="help" size={size} color={iconColor} {...props} />;
 }
 
 export { Icon };
