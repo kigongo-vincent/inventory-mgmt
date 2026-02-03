@@ -10,6 +10,7 @@ import { StatusBar } from 'expo-status-bar';
 import { Platform, Pressable, Animated } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useMemo, useState } from 'react';
 import { useFonts } from 'expo-font';
@@ -27,6 +28,8 @@ import { router } from 'expo-router';
 import { requestNotificationPermissions } from '@/lib/services/notificationService';
 import { sseClient } from '@/lib/services/sseClient';
 import * as Notifications from 'expo-notifications';
+import { testConnection } from '@/lib/api/testConnection';
+import { ConnectionFallbackScreen } from '@/components/ConnectionFallbackScreen';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -45,6 +48,14 @@ export default function RootLayout() {
   const currentUser = useAuthStore((state) => state.currentUser);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
+  // Connection state
+  const [connectionStatus, setConnectionStatus] = useState<{
+    tested: boolean;
+    success: boolean;
+    errorMessage?: string;
+  }>({ tested: false, success: false });
+  const [isRetrying, setIsRetrying] = useState(false);
+
   // Load Poppins fonts
   const [fontsLoaded, fontError] = useFonts({
     'Poppins-Light': require('../fonts/Poppins-Light.ttf'),
@@ -54,13 +65,42 @@ export default function RootLayout() {
     'Poppins-Bold': require('../fonts/Poppins-Bold.ttf'),
   });
 
-  // Log API base URL on app startup
+  // Test connection on app startup
   useEffect(() => {
-    console.log('═══════════════════════════════════════');
-    console.log('🚀 APP STARTED');
-    console.log('📡 API Base URL:', API_BASE_URL);
-    console.log('═══════════════════════════════════════');
+    const checkConnection = async () => {
+      console.log('═══════════════════════════════════════');
+      console.log('🚀 APP STARTED');
+      console.log('📡 API Base URL:', API_BASE_URL);
+      console.log('═══════════════════════════════════════');
+
+      const result = await testConnection();
+      setConnectionStatus({
+        tested: true,
+        success: result.success,
+        errorMessage: result.success ? undefined : result.message,
+      });
+
+      if (result.success) {
+        console.log('✅ Connection test successful');
+      } else {
+        console.warn('⚠️ Connection test failed:', result.message);
+      }
+    };
+
+    checkConnection();
   }, []);
+
+  // Retry connection handler
+  const handleRetryConnection = async () => {
+    setIsRetrying(true);
+    const result = await testConnection();
+    setConnectionStatus({
+      tested: true,
+      success: result.success,
+      errorMessage: result.success ? undefined : result.message,
+    });
+    setIsRetrying(false);
+  };
 
   // Hide splash screen when fonts are loaded
   useEffect(() => {
@@ -106,10 +146,10 @@ export default function RootLayout() {
 
     return () => {
       if (notificationListener) {
-        Notifications.removeNotificationSubscription(notificationListener);
+        // Notifications.removeNotificationSubscription(notificationListener);
       }
       if (responseListener) {
-        Notifications.removeNotificationSubscription(responseListener);
+        // Notifications.removeNotificationSubscription(responseListener);
       }
     };
   }, []);
@@ -138,7 +178,7 @@ export default function RootLayout() {
       sseClient.disconnect();
     };
   }, [isAuthenticated, currentUser]);
-  
+
   // Create dynamic nav theme with Spotify colors
   const dynamicNavTheme = useMemo(() => {
     return NAV_THEME[colorScheme] as Theme;
@@ -149,6 +189,17 @@ export default function RootLayout() {
     return null;
   }
 
+  // Show fallback screen if connection test failed
+  if (connectionStatus.tested && !connectionStatus.success) {
+    return (
+      <ConnectionFallbackScreen
+        errorMessage={connectionStatus.errorMessage}
+        onRetry={handleRetryConnection}
+        isRetrying={isRetrying}
+      />
+    );
+  }
+
   return (
     <>
       <StatusBar
@@ -157,54 +208,56 @@ export default function RootLayout() {
       />
       {/* WRAP YOUR APP WITH ANY ADDITIONAL PROVIDERS HERE */}
       {/* <ExampleProvider> */}
-      <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.background }}>
-        <BottomSheetModalProvider>
-          <ActionSheetProvider>
-            <NavThemeProvider value={dynamicNavTheme}>
-              <Stack 
-                screenOptions={{ 
-                  headerShown: false,
-                  contentStyle: {
-                    backgroundColor: colors.background,
-                  },
-                  animation: 'default',
-                  animationDuration: 200,
-                }}>
-                <Stack.Screen name="(auth)" />
-                <Stack.Screen name="(tabs)" />
-                <Stack.Screen name="index" options={{ headerShown: false }} />
-                <Stack.Screen name="modal" options={MODAL_OPTIONS} />
-                <Stack.Screen name="account-settings" options={{ headerShown: false }} />
-                <Stack.Screen name="app-settings" options={{ headerShown: false }} />
-                <Stack.Screen name="edit-profile" options={{ headerShown: false }} />
-                <Stack.Screen name="change-password" options={{ headerShown: false }} />
-                <Stack.Screen name="notifications" options={{ headerShown: false }} />
-                <Stack.Screen name="notification-preferences" options={{ headerShown: false }} />
-                <Stack.Screen name="language" options={{ headerShown: false }} />
-                <Stack.Screen name="help-support" options={{ headerShown: false }} />
-                <Stack.Screen name="offline-products" options={{ headerShown: false }} />
-                <Stack.Screen name="offline-sales" options={{ headerShown: false }} />
-                <Stack.Screen name="offline-users" options={{ headerShown: false }} />
-                <Stack.Screen name="offline-branches" options={{ headerShown: false }} />
-                <Stack.Screen name="branch-sales" options={{ headerShown: false }} />
-                <Stack.Screen name="branch-details" options={{ headerShown: false }} />
-                <Stack.Screen name="sale-details" options={{ headerShown: false }} />
-                <Stack.Screen name="search-results" options={{ headerShown: false }} />
-                <Stack.Screen 
-                  name="record-sale" 
-                  options={{ 
-                    headerShown: false 
-                  }} 
-                />
-                <Stack.Screen name="edit-sale" options={{ headerShown: false }} />
-                <Stack.Screen name="edit-user" options={{ headerShown: false }} />
-                <Stack.Screen name="edit-product" options={{ headerShown: false }} />
-                <Stack.Screen name="edit-branch" options={{ headerShown: false }} />
-              </Stack>
-            </NavThemeProvider>
-          </ActionSheetProvider>
-        </BottomSheetModalProvider>
-      </GestureHandlerRootView>
+      <SafeAreaProvider>
+        <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.background }}>
+          <BottomSheetModalProvider>
+            <ActionSheetProvider>
+              <NavThemeProvider value={dynamicNavTheme}>
+                <Stack
+                  screenOptions={{
+                    headerShown: false,
+                    contentStyle: {
+                      backgroundColor: colors.background,
+                    },
+                    animation: 'default',
+                    animationDuration: 200,
+                  }}>
+                  <Stack.Screen name="(auth)" />
+                  <Stack.Screen name="(tabs)" />
+                  <Stack.Screen name="index" options={{ headerShown: false }} />
+                  <Stack.Screen name="modal" options={MODAL_OPTIONS} />
+                  <Stack.Screen name="account-settings" options={{ headerShown: false }} />
+                  <Stack.Screen name="app-settings" options={{ headerShown: false }} />
+                  <Stack.Screen name="edit-profile" options={{ headerShown: false }} />
+                  <Stack.Screen name="change-password" options={{ headerShown: false }} />
+                  <Stack.Screen name="notifications" options={{ headerShown: false }} />
+                  <Stack.Screen name="notification-preferences" options={{ headerShown: false }} />
+                  <Stack.Screen name="language" options={{ headerShown: false }} />
+                  <Stack.Screen name="help-support" options={{ headerShown: false }} />
+                  <Stack.Screen name="offline-products" options={{ headerShown: false }} />
+                  <Stack.Screen name="offline-sales" options={{ headerShown: false }} />
+                  <Stack.Screen name="offline-users" options={{ headerShown: false }} />
+                  <Stack.Screen name="offline-branches" options={{ headerShown: false }} />
+                  <Stack.Screen name="branch-sales" options={{ headerShown: false }} />
+                  <Stack.Screen name="branch-details" options={{ headerShown: false }} />
+                  <Stack.Screen name="sale-details" options={{ headerShown: false }} />
+                  <Stack.Screen name="search-results" options={{ headerShown: false }} />
+                  <Stack.Screen
+                    name="record-sale"
+                    options={{
+                      headerShown: false
+                    }}
+                  />
+                  <Stack.Screen name="edit-sale" options={{ headerShown: false }} />
+                  <Stack.Screen name="edit-user" options={{ headerShown: false }} />
+                  <Stack.Screen name="edit-product" options={{ headerShown: false }} />
+                  <Stack.Screen name="edit-branch" options={{ headerShown: false }} />
+                </Stack>
+              </NavThemeProvider>
+            </ActionSheetProvider>
+          </BottomSheetModalProvider>
+        </GestureHandlerRootView>
+      </SafeAreaProvider>
       {/* </ExampleProvider> */}
     </>
   );

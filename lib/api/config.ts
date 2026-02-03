@@ -11,7 +11,7 @@ const getApiBaseUrl = (): string => {
   // This is the centralized location - always comes from .env.dev
   const apiUrl =
     Constants.expoConfig?.extra?.apiBaseUrl ||
-    (__DEV__ ? 'http://192.168.1.11:8080/api/v1' : 'https://your-api-domain.com/api/v1');
+    (__DEV__ ? 'http://localhost:8080/api/v1' : 'https://your-api-domain.com/api/v1');
 
   // Log the API URL being used (only in development)
   if (__DEV__) {
@@ -33,10 +33,10 @@ const getApiBaseUrl = (): string => {
 
 /**
  * API Base URL - Centralized configuration
- * 
+ *
  * This value comes from .env.dev file via app.config.js
  * To change the API URL, update API_BASE_URL in .env.dev
- * 
+ *
  * For physical devices, use your machine's IP address instead of localhost
  * Example: API_BASE_URL=http://192.168.1.100:8080/api/v1
  */
@@ -82,7 +82,7 @@ export async function handleResponse<T>(response: Response, endpoint?: string): 
       errorData = error;
       errorMessage = error.error || error.message || errorMessage;
       errorCode = error.code;
-      
+
       if (__DEV__) {
         console.error('❌ API Error Response:', JSON.stringify(error, null, 2));
       }
@@ -90,12 +90,12 @@ export async function handleResponse<T>(response: Response, endpoint?: string): 
       const textError = await response.text();
       errorMessage = textError || errorMessage;
       errorData = textError;
-      
+
       if (__DEV__) {
         console.error('❌ API Error Response (text):', textError);
       }
     }
-    
+
     if (__DEV__) {
       console.error('❌ API Error Details:', {
         status: response.status,
@@ -112,18 +112,21 @@ export async function handleResponse<T>(response: Response, endpoint?: string): 
       // Resource errors like "user not found" or "product not found" shouldn't trigger logout
       // Also, don't trigger logout for login endpoint failures (user is trying to authenticate)
       const isLoginEndpoint = endpoint?.includes('/users/login') || false;
-      const isResourceError = errorMessage?.toLowerCase().includes('not found') ||
-                             errorCode === 'USER_NOT_FOUND' ||
-                             errorCode === 'PRODUCT_NOT_FOUND' ||
-                             errorCode === 'BRANCH_NOT_FOUND';
-      const isAuthFailure = !isLoginEndpoint && !isResourceError && (
-        errorCode === 'MISSING_AUTH_HEADER' || 
-        errorCode === 'UNAUTHORIZED' || 
-        errorMessage?.toLowerCase().includes('authorization') ||
-        errorMessage?.toLowerCase().includes('token') ||
-        (errorMessage?.toLowerCase().includes('unauthorized') && !errorMessage?.toLowerCase().includes('invalid credentials'))
-      );
-      
+      const isResourceError =
+        errorMessage?.toLowerCase().includes('not found') ||
+        errorCode === 'USER_NOT_FOUND' ||
+        errorCode === 'PRODUCT_NOT_FOUND' ||
+        errorCode === 'BRANCH_NOT_FOUND';
+      const isAuthFailure =
+        !isLoginEndpoint &&
+        !isResourceError &&
+        (errorCode === 'MISSING_AUTH_HEADER' ||
+          errorCode === 'UNAUTHORIZED' ||
+          errorMessage?.toLowerCase().includes('authorization') ||
+          errorMessage?.toLowerCase().includes('token') ||
+          (errorMessage?.toLowerCase().includes('unauthorized') &&
+            !errorMessage?.toLowerCase().includes('invalid credentials')));
+
       if (isAuthFailure && onAuthError) {
         // Only logout on actual authentication failures (not login attempts or resource errors)
         onAuthError();
@@ -195,6 +198,20 @@ export async function apiRequest<T>(endpoint: string, options: RequestInit = {})
   const isLoginEndpoint = endpoint === '/users/login';
   const token = isLoginEndpoint ? null : await getAuthToken();
 
+  // Never send authenticated requests without a token - avoids 401/forbidden and unwanted logout
+  if (!isLoginEndpoint && !token) {
+    if (__DEV__) {
+      console.warn('⚠️ No auth token for API request – clearing session:', endpoint);
+    }
+    if (onAuthError) {
+      onAuthError();
+    }
+    const err = new Error('No auth token') as any;
+    err.code = 'NO_AUTH_TOKEN';
+    err.status = 401;
+    throw err;
+  }
+
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
     ...options.headers,
@@ -202,8 +219,6 @@ export async function apiRequest<T>(endpoint: string, options: RequestInit = {})
 
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
-  } else if (__DEV__ && !isLoginEndpoint) {
-    console.warn('⚠️ No auth token found for API request:', endpoint);
   }
 
   const fullUrl = `${API_BASE_URL}${endpoint}`;
@@ -235,7 +250,7 @@ export async function apiRequest<T>(endpoint: string, options: RequestInit = {})
     if (__DEV__) {
       console.log(`📡 API Response: ${response.status} ${response.statusText} for ${fullUrl}`);
     }
-    
+
     return handleResponse<T>(response, endpoint);
   } catch (error: any) {
     // Enhanced error logging

@@ -184,9 +184,26 @@ export default function UserSalesScreen() {
                       <Text variant="heading" style={{ fontWeight: '500', fontSize: 14, marginBottom: 4 }}>
                         {sale.productName}
                       </Text>
-                      {sale.gasSize !== 'none' && (
+                      {/* Category */}
+                      {sale.productAttributes?.category && (
+                        <Text variant="subhead" color="tertiary" style={{ fontSize: 12, marginBottom: 4 }}>
+                          Category: {sale.productAttributes.category}
+                        </Text>
+                      )}
+                      {/* Provider - For Full Gas Cylinder, Regulator, and New Kit */}
+                      {(sale.productAttributes?.type === 'Full Gas Cylinder' || sale.productAttributes?.type === 'Regulator' || sale.productAttributes?.type === 'New Kit') && sale.productAttributes?.provider && (
+                        <Text variant="subhead" color="tertiary" style={{ fontSize: 13, marginBottom: 4 }}>
+                          Provider: {sale.productAttributes.provider}
+                        </Text>
+                      )}
+                      {/* Size - For Full Gas Cylinder, Regulator, New Kit, and Gas Plate */}
+                      {(sale.productAttributes?.size || sale.productAttributes?.gasSize) && (sale.productAttributes?.size || sale.productAttributes?.gasSize) !== 'none' && (
                         <Text variant="subhead" color="tertiary" style={{ fontSize: 13, marginBottom: 6 }}>
-                          Size: {sale.gasSize}
+                          {sale.productAttributes?.type === 'Gas Plate' 
+                            ? `Plate Count: ${sale.productAttributes.size || sale.productAttributes.gasSize}`
+                            : sale.productAttributes?.type === 'Regulator'
+                            ? `Size: ${sale.productAttributes.size || sale.productAttributes.gasSize}`
+                            : `Size: ${sale.productAttributes.size || sale.productAttributes.gasSize}`}
                         </Text>
                       )}
                       <View className="gap-1.5">

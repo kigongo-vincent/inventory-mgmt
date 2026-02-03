@@ -17,60 +17,28 @@ export function TabHeader() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const [searchQuery, setSearchQuery] = useState('');
   const getUnreadCount = useNotificationStore((state) => state.getUnreadCount);
-  const pollUnreadCount = useNotificationStore((state) => state.pollUnreadCount);
   const fetchNotifications = useNotificationStore((state) => state.fetchNotifications);
   const unreadCount = getUnreadCount();
-  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const appStateRef = useRef(AppState.currentState);
 
-  // Poll for unread count every 10 minutes
+  // Fetch notifications on mount and when app returns to foreground (no polling)
   useEffect(() => {
     if (!isAuthenticated) {
       return;
     }
 
-    // Initial fetch
     fetchNotifications();
 
-    // Set up polling interval (10 minutes = 600000ms)
-    const startPolling = () => {
-      if (pollIntervalRef.current) {
-        clearInterval(pollIntervalRef.current);
-      }
-      pollIntervalRef.current = setInterval(() => {
-        pollUnreadCount();
-      }, 600000); // 10 minutes
-    };
-
-    // Handle app state changes
     const handleAppStateChange = (nextAppState: string) => {
       if (appStateRef.current.match(/inactive|background/) && nextAppState === 'active') {
-        // App came to foreground, fetch immediately and restart polling
         fetchNotifications();
-        startPolling();
-      } else if (nextAppState.match(/inactive|background/)) {
-        // App went to background, stop polling
-        if (pollIntervalRef.current) {
-          clearInterval(pollIntervalRef.current);
-          pollIntervalRef.current = null;
-        }
       }
       appStateRef.current = nextAppState;
     };
 
     const subscription = AppState.addEventListener('change', handleAppStateChange);
-
-    // Start polling
-    startPolling();
-
-    // Cleanup on unmount
-    return () => {
-      if (pollIntervalRef.current) {
-        clearInterval(pollIntervalRef.current);
-      }
-      subscription.remove();
-    };
-  }, [isAuthenticated, pollUnreadCount, fetchNotifications]);
+    return () => subscription.remove();
+  }, [isAuthenticated, fetchNotifications]);
 
   return (
     <>

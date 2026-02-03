@@ -39,6 +39,7 @@ export default function EditSaleScreen() {
         setBuyerName(saleData.buyerName || '');
         setBuyerContact(saleData.buyerContact || '');
         setBuyerLocation(saleData.buyerLocation || '');
+        setExtraCosts(saleData.extraCosts ? saleData.extraCosts.toString() : '');
       } else {
         Alert.alert('Error', 'Sale not found', [
           {
@@ -55,6 +56,7 @@ export default function EditSaleScreen() {
   const [buyerName, setBuyerName] = useState('');
   const [buyerContact, setBuyerContact] = useState('');
   const [buyerLocation, setBuyerLocation] = useState('');
+  const [extraCosts, setExtraCosts] = useState<string>('');
 
   if (!sale) {
     return (
@@ -94,7 +96,8 @@ export default function EditSaleScreen() {
   }
 
   const qty = quantity ? parseInt(quantity, 10) : sale.quantity;
-  const totalPrice = sale.unitPrice * (isNaN(qty) ? sale.quantity : qty);
+  const extraCostsValue = extraCosts ? parseFloat(extraCosts) || 0 : (sale.extraCosts || 0);
+  const totalPrice = (sale.unitPrice * (isNaN(qty) ? sale.quantity : qty)) + extraCostsValue;
 
   const handleUpdateSale = async () => {
     if (!quantity.trim()) {
@@ -112,6 +115,7 @@ export default function EditSaleScreen() {
     try {
       await updateSale(sale.id, {
         quantity: qty,
+        extraCosts: extraCostsValue,
         totalPrice: totalPrice,
         paymentStatus: paymentStatus,
         buyerName: buyerName.trim() || undefined,
@@ -287,6 +291,37 @@ export default function EditSaleScreen() {
                 </View>
               </View>
 
+              {/* Extra Costs Input */}
+              <View>
+                <View
+                  className="rounded-2xl px-5 py-4"
+                  style={{
+                    backgroundColor: colors.card,
+                    borderWidth: 0.5,
+                    borderColor: withOpacity(colors.border, 0.2),
+                  }}>
+                  <Text variant="subhead" className="mb-2">
+                    Extra Costs (Optional)
+                  </Text>
+                  <Text variant="footnote" color="tertiary" className="mb-2" style={{ fontSize: 12 }}>
+                    Additional costs like delivery charges
+                  </Text>
+                  <Input
+                    value={extraCosts}
+                    onChangeText={setExtraCosts}
+                    placeholder={`e.g., ${formatCurrency(0, sale.currency)}`}
+                    keyboardType="decimal-pad"
+                    style={{
+                      backgroundColor: colors.background,
+                      color: colors.foreground,
+                      paddingHorizontal: 12,
+                      paddingVertical: 12,
+                      borderRadius: 12,
+                    }}
+                  />
+                </View>
+              </View>
+
               {/* Total Price Display */}
               {quantity && !isNaN(parseInt(quantity, 10)) && (
                 <View
@@ -330,6 +365,11 @@ export default function EditSaleScreen() {
                         numberOfLines={1}
                         ellipsizeMode="tail">
                         {quantity} × {formatCurrency(sale.unitPrice, sale.currency)}
+                        {extraCosts && parseFloat(extraCosts) > 0 && (
+                          <Text variant="subhead" color="tertiary" style={{ fontSize: 13 }}>
+                            {' + '}{formatCurrency(parseFloat(extraCosts), sale.currency)}
+                          </Text>
+                        )}
                       </Text>
                     </View>
                   </View>

@@ -37,12 +37,41 @@ const defaultSettings: AppSettings = {
   baseFontSize: 0.85, // Small (default)
   productProperties: [
     {
+      id: 'prop_category',
+      name: 'Category',
+      type: 'select',
+      options: ['Product', 'Service'],
+      required: true,
+      order: 1,
+      useForFiltering: true,
+      displayInList: true,
+    },
+    {
       id: 'prop_type',
       name: 'Product Type',
       type: 'select',
-      options: ['Full Gas Cylinder', 'Cylinder Refill', 'Cylinder Burner', 'Gas Plate', 'Gas Grill Stand', 'Pipe', 'Regulator'],
+      options: ['Full Gas Cylinder', 'New Kit', 'Cylinder Refill', 'Cylinder Burner', 'Gas Plate', 'Gas Grill Stand', 'Pipe', 'Regulator'],
       required: true,
-      order: 1,
+      order: 2,
+      useForFiltering: true,
+      displayInList: true,
+    },
+    {
+      id: 'prop_provider',
+      name: 'Provider/Brand',
+      type: 'select',
+      options: [
+        'Shell',
+        'Vivo Energy',
+        'Stabex International',
+        'Total Energies',
+        'Oryx Energies',
+        'Rubis Energy',
+        'HAS Petroleum',
+        'Other'
+      ], // Major LPG gas providers in Uganda (2025)
+      required: false,
+      order: 3,
       useForFiltering: true,
       displayInList: true,
     },
@@ -50,9 +79,9 @@ const defaultSettings: AppSettings = {
       id: 'prop_size',
       name: 'Size',
       type: 'select',
-      options: ['3kg', '6kg', '12.5kg', 'none'],
+      options: ['3kg', '6kg', '12.5kg', '20mm', '27mm', '2 plates', '3 plates', 'none'],
       required: false,
-      order: 2,
+      order: 4,
       useForFiltering: true,
       displayInList: true,
     },
@@ -60,6 +89,7 @@ const defaultSettings: AppSettings = {
   // Legacy fields for backward compatibility
   productTypes: [
     'Full Gas Cylinder',
+    'New Kit',
     'Cylinder Refill',
     'Cylinder Burner',
     'Gas Plate',
@@ -67,7 +97,7 @@ const defaultSettings: AppSettings = {
     'Pipe',
     'Regulator',
   ],
-  gasSizes: ['3kg', '6kg', '12.5kg', 'none'],
+  gasSizes: ['3kg', '6kg', '12.5kg', '20mm', '27mm', '2 plates', '3 plates', 'none'],
   customProductProperties: [],
   defaultCurrency: 'UGX',
 };

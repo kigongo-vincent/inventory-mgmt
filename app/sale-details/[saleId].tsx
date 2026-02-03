@@ -4,6 +4,7 @@ import { Alert, Image, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 
+import { ActivityIndicator } from '@/components/nativewindui/ActivityIndicator';
 import { BottomSheet, BottomSheetOption } from '@/components/nativewindui/BottomSheet';
 import { Button } from '@/components/nativewindui/Button';
 import { Icon } from '@/components/nativewindui/Icon';
@@ -459,6 +460,25 @@ export default function SaleDetailsScreen() {
                     {formatCurrency(sale.unitPrice, sale.currency)}
                   </Text>
                 </View>
+                {sale.extraCosts && sale.extraCosts > 0 && (
+                  <View className="flex-row items-center justify-between py-1">
+                    <Text
+                      variant="footnote"
+                      color="tertiary"
+                      style={{ fontSize: 13, fontWeight: '400', letterSpacing: 0.1 }}>
+                      Extra Costs
+                    </Text>
+                    <Text
+                      variant="body"
+                      style={{
+                        fontSize: 14,
+                        fontWeight: '400',
+                        color: colors.foreground,
+                      }}>
+                      {formatCurrency(sale.extraCosts, sale.currency)}
+                    </Text>
+                  </View>
+                )}
                 <View className="flex-row items-center justify-between py-1.5">
                   <Text
                     variant="footnote"

@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Alert, View, Pressable, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -26,6 +26,10 @@ export default function RecordSaleScreen() {
   const getProductsByTypeAndSize = useProductStore(
     (state) => state.getProductsByTypeAndSize
   );
+  const getProductsByAttributes = useProductStore(
+    (state) => state.getProductsByAttributes
+  );
+  const allProducts = useProductStore((state) => state.products);
   const reduceProductQuantity = useProductStore(
     (state) => state.reduceProductQuantity
   );
@@ -50,22 +54,50 @@ export default function RecordSaleScreen() {
 
   const productTypes = settings.productTypes || [];
   const gasSizes = settings.gasSizes || [];
+  const productProperties = settings.productProperties || [];
+
+  // Get provider options from products or settings
+  const providerOptions = useMemo(() => {
+    const providerProp = productProperties.find(p => p.id === 'prop_provider');
+    if (providerProp?.options && providerProp.options.length > 0) {
+      return providerProp.options;
+    }
+    // Extract unique providers from existing products
+    const providers = new Set<string>();
+    allProducts.forEach(p => {
+      if (p.attributes?.provider) {
+        providers.add(p.attributes.provider);
+      }
+    });
+    return Array.from(providers).sort();
+  }, [productProperties, allProducts]);
 
   const [productType, setProductType] = useState<ProductType>(() => {
     return productTypes.length > 0 ? productTypes[0] : '';
   });
+  const [provider, setProvider] = useState<string>('all');
   const [gasSize, setGasSize] = useState<GasSize>(() => {
     return gasSizes.length > 0 ? (gasSizes.find(s => s !== 'none') || gasSizes[0]) : '';
   });
+
+  // Check if size should be shown (only for Full Gas Cylinder)
+  const isFullGasCylinder = productType === 'Full Gas Cylinder';
+  const shouldShowSize = isFullGasCylinder;
+  
+  // Check if provider should be shown (only for Full Gas Cylinder)
+  const shouldShowProvider = isFullGasCylinder;
 
   useEffect(() => {
     if (productTypes.length > 0 && !productType) {
       setProductType(productTypes[0]);
     }
-    if (gasSizes.length > 0 && !gasSize) {
-      setGasSize(gasSizes.find(s => s !== 'none') || gasSizes[0]);
+    if (shouldShowSize && gasSizes.length > 0 && !gasSize) {
+      // For Full Gas Cylinder, default to kg sizes
+      setGasSize(gasSizes.find(s => s !== 'none' && s.includes('kg')) || gasSizes[0]);
+    } else if (!shouldShowSize) {
+      setGasSize('none');
     }
-  }, [productTypes, gasSizes, productType, gasSize]);
+  }, [productTypes, gasSizes, productType, gasSize, shouldShowSize]);
 
   const [quantity, setQuantity] = useState('1');
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
@@ -73,16 +105,31 @@ export default function RecordSaleScreen() {
   const [buyerName, setBuyerName] = useState('');
   const [buyerContact, setBuyerContact] = useState('');
   const [buyerLocation, setBuyerLocation] = useState('');
+  const [overrideTotalPrice, setOverrideTotalPrice] = useState<string>('');
+  const [isTotalPriceOverridden, setIsTotalPriceOverridden] = useState(false);
+  const [extraCosts, setExtraCosts] = useState<string>('');
 
   const validProductType = productType || (productTypes.length > 0 ? productTypes[0] : '');
-  const validGasSize = gasSize || (gasSizes.length > 0 ? (gasSizes.find(s => s !== 'none') || gasSizes[0]) : '');
+  const validGasSize = shouldShowSize ? (gasSize || (gasSizes.length > 0 ? (gasSizes.find(s => s !== 'none') || gasSizes[0]) : '')) : 'none';
+
+  // Build filter attributes
+  const filterAttributes: Record<string, any> = {
+    type: validProductType,
+  };
+  
+  if (shouldShowSize) {
+    filterAttributes.size = validGasSize;
+  }
+  
+  if (provider !== 'all') {
+    filterAttributes.provider = provider;
+  }
 
   let availableProducts: Product[] = [];
   try {
-    if (currentUser && validProductType && validGasSize && productTypes.length > 0 && gasSizes.length > 0) {
-      availableProducts = getProductsByTypeAndSize(
-        validProductType,
-        validGasSize,
+    if (currentUser && validProductType && productTypes.length > 0) {
+      availableProducts = getProductsByAttributes(
+        filterAttributes,
         currentUser.companyId || ''
       ) || [];
     }
@@ -95,10 +142,17 @@ export default function RecordSaleScreen() {
     ? availableProducts.find((p) => p.id === selectedProduct)
     : availableProducts[0] || null;
 
-  const totalPrice =
-    product && quantity
-      ? product.price * parseInt(quantity, 10)
-      : 0;
+  // Calculate unit price (always use product price)
+  const unitPrice = product?.price || 0;
+
+  // Calculate total price (use override if set, otherwise calculate from unit price, quantity, and extra costs)
+  const calculatedTotalPrice = product && quantity
+    ? (unitPrice * parseInt(quantity, 10)) + (extraCosts ? parseFloat(extraCosts) || 0 : 0)
+    : 0;
+
+  const totalPrice = isTotalPriceOverridden && overrideTotalPrice && !isNaN(parseFloat(overrideTotalPrice))
+    ? parseFloat(overrideTotalPrice)
+    : calculatedTotalPrice;
 
   const handleRecordSale = async (syncStatus: 'online' | 'offline') => {
     if (!quantity.trim()) {
@@ -136,8 +190,9 @@ export default function RecordSaleScreen() {
         productAttributes: product.attributes || {},
         gasSize: product.gasSize,
         quantity: qty,
-        unitPrice: product.price,
-        totalPrice: totalPrice,
+        unitPrice: unitPrice, // Always use product price
+        extraCosts: extraCosts ? parseFloat(extraCosts) || 0 : 0,
+        totalPrice: totalPrice, // Use overridden total if set, otherwise calculated
         currency: product.currency,
         sellerId: currentUser.id,
         // sellerName removed - use sellerId FK
@@ -176,6 +231,9 @@ export default function RecordSaleScreen() {
             setBuyerName('');
             setBuyerContact('');
             setBuyerLocation('');
+            setOverrideTotalPrice('');
+            setIsTotalPriceOverridden(false);
+            setExtraCosts('');
             if (syncStatus === 'offline') {
               router.replace('/offline-sales');
             } else {
@@ -317,6 +375,16 @@ export default function RecordSaleScreen() {
                               onPress={() => {
                                 setProductType(type);
                                 setSelectedProduct(null);
+                                // Reset provider when type changes (only keep if it's Full Gas Cylinder)
+                                if (type !== 'Full Gas Cylinder') {
+                                  setProvider('all');
+                                }
+                                // Reset size when type changes (only for Full Gas Cylinder)
+                                if (type === 'Full Gas Cylinder') {
+                                  setGasSize(gasSizes.find(s => s !== 'none' && s.includes('kg')) || gasSizes[0]);
+                                } else {
+                                  setGasSize('none');
+                                }
                               }}
                               style={({ pressed }) => ({
                                 opacity: pressed ? 0.95 : 1,
@@ -345,23 +413,49 @@ export default function RecordSaleScreen() {
                   </View>
                 )}
 
-                {gasSizes && gasSizes.length > 0 && (
+                {/* Provider/Brand Filter - Only for Full Gas Cylinder */}
+                {shouldShowProvider && providerOptions.length > 0 && (
                   <View>
                     <Text variant="subhead" className="mb-2">
-                      Gas Size
+                      Provider/Brand
                     </Text>
                     <ScrollView
                       horizontal
                       showsHorizontalScrollIndicator={false}
                       contentContainerStyle={{ paddingRight: 20 }}>
                       <View className="flex-row gap-2">
-                        {gasSizes.map((size) => {
-                          const isSelected = gasSize === size;
+                        <Pressable
+                          onPress={() => {
+                            setProvider('all');
+                            setSelectedProduct(null);
+                          }}
+                          style={({ pressed }) => ({
+                            opacity: pressed ? 0.95 : 1,
+                          })}>
+                          <View
+                            className="px-4 py-2.5 rounded-full"
+                            style={{
+                              backgroundColor: provider === 'all' ? colors.primary : colors.card,
+                              borderWidth: 0.5,
+                              borderColor: withOpacity(colors.border, 0.2),
+                            }}>
+                            <Text
+                              style={{
+                                fontSize: 13.5 * baseFontSize,
+                                color: provider === 'all' ? colors.primaryForeground : colors.foreground,
+                                fontWeight: provider === 'all' ? '600' : '400',
+                              }}>
+                              All Providers
+                            </Text>
+                          </View>
+                        </Pressable>
+                        {providerOptions.map((prov) => {
+                          const isSelected = provider === prov;
                           return (
                             <Pressable
-                              key={size}
+                              key={prov}
                               onPress={() => {
-                                setGasSize(size);
+                                setProvider(prov);
                                 setSelectedProduct(null);
                               }}
                               style={({ pressed }) => ({
@@ -380,12 +474,64 @@ export default function RecordSaleScreen() {
                                     color: isSelected ? colors.primaryForeground : colors.foreground,
                                     fontWeight: isSelected ? '600' : '400',
                                   }}>
-                                  {size === 'none' ? 'N/A' : size}
+                                  {prov}
                                 </Text>
                               </View>
                             </Pressable>
                           );
                         })}
+                      </View>
+                    </ScrollView>
+                  </View>
+                )}
+
+                {/* Size Filter - Only for Full Gas Cylinder */}
+                {shouldShowSize && gasSizes && gasSizes.length > 0 && (
+                  <View>
+                    <Text variant="subhead" className="mb-2">
+                      Gas Size
+                    </Text>
+                    <ScrollView
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      contentContainerStyle={{ paddingRight: 20 }}>
+                      <View className="flex-row gap-2">
+                        {gasSizes
+                          .filter(size => {
+                            // For Full Gas Cylinder, only show kg sizes
+                            return size.includes('kg') || size === 'none';
+                          })
+                          .map((size) => {
+                            const isSelected = gasSize === size;
+                            return (
+                              <Pressable
+                                key={size}
+                                onPress={() => {
+                                  setGasSize(size);
+                                  setSelectedProduct(null);
+                                }}
+                                style={({ pressed }) => ({
+                                  opacity: pressed ? 0.95 : 1,
+                                })}>
+                                <View
+                                  className="px-4 py-2.5 rounded-full"
+                                  style={{
+                                    backgroundColor: isSelected ? colors.primary : colors.card,
+                                    borderWidth: 0.5,
+                                    borderColor: withOpacity(colors.border, 0.2),
+                                  }}>
+                                  <Text
+                                    style={{
+                                      fontSize: 13.5 * baseFontSize,
+                                      color: isSelected ? colors.primaryForeground : colors.foreground,
+                                      fontWeight: isSelected ? '600' : '400',
+                                    }}>
+                                    {size === 'none' ? 'N/A' : size}
+                                  </Text>
+                                </View>
+                              </Pressable>
+                            );
+                          })}
                       </View>
                     </ScrollView>
                   </View>
@@ -466,7 +612,22 @@ export default function RecordSaleScreen() {
                                 numberOfLines={1}>
                                 {product.name}
                               </Text>
-                              {product.gasSize !== 'none' && (
+                              {/* Provider info - Key for Full Gas Cylinder */}
+                              {product.attributes?.type === 'Full Gas Cylinder' && product.attributes?.provider && (
+                                <View className="flex-row items-center gap-1.5 mb-3">
+                                  <View
+                                    className="h-1.5 w-1.5 rounded-full"
+                                    style={{ backgroundColor: colors.primary }}
+                                  />
+                                  <Text
+                                    variant="subhead"
+                                    style={{ fontSize: 13, fontWeight: '600' }}>
+                                    {product.attributes.provider}
+                                  </Text>
+                                </View>
+                              )}
+                              {/* Size info - Only for Full Gas Cylinder */}
+                              {product.attributes?.type === 'Full Gas Cylinder' && product.attributes?.size && product.attributes.size !== 'none' && (
                                 <View className="flex-row items-center gap-1.5 mb-3">
                                   <View
                                     className="h-1.5 w-1.5 rounded-full"
@@ -476,7 +637,7 @@ export default function RecordSaleScreen() {
                                     variant="subhead"
                                     color="tertiary"
                                     style={{ fontSize: 13 }}>
-                                    {product.gasSize}
+                                    {product.attributes.size}
                                   </Text>
                                 </View>
                               )}
@@ -514,7 +675,7 @@ export default function RecordSaleScreen() {
                                     }}
                                     numberOfLines={1}
                                     ellipsizeMode="tail">
-                                    {formatCurrency(product.price, product.currency)}
+                                    {formatCurrency(unitPrice, product.currency)}
                                   </Text>
                                 </View>
                               </View>
@@ -538,6 +699,109 @@ export default function RecordSaleScreen() {
                               onChangeText={setQuantity}
                               placeholder="Enter quantity"
                               keyboardType="numeric"
+                              style={{
+                                backgroundColor: colors.background,
+                                color: colors.foreground,
+                                paddingHorizontal: 12,
+                                paddingVertical: 12,
+                                borderRadius: 12,
+                              }}
+                            />
+                          </View>
+                        </View>
+
+                        {/* Total Price Override Section */}
+                        <View>
+                          <View
+                            className="rounded-2xl px-5 py-4"
+                            style={{
+                              backgroundColor: colors.card,
+                              borderWidth: 0.5,
+                              borderColor: withOpacity(colors.border, 0.2),
+                            }}>
+                            <View className="flex-row items-center justify-between mb-2">
+                              <Text variant="subhead">
+                                Total Price
+                              </Text>
+                              <Pressable
+                                onPress={() => {
+                                  if (isTotalPriceOverridden) {
+                                    setIsTotalPriceOverridden(false);
+                                    setOverrideTotalPrice('');
+                                  } else {
+                                    setIsTotalPriceOverridden(true);
+                                    setOverrideTotalPrice(calculatedTotalPrice.toString());
+                                  }
+                                }}
+                                style={({ pressed }) => ({
+                                  opacity: pressed ? 0.7 : 1,
+                                })}>
+                                <Text
+                                  variant="footnote"
+                                  style={{
+                                    color: colors.primary,
+                                    fontSize: 12,
+                                  }}>
+                                  {isTotalPriceOverridden ? 'Use Calculated' : 'Override Total'}
+                                </Text>
+                              </Pressable>
+                            </View>
+                            {isTotalPriceOverridden ? (
+                              <Input
+                                value={overrideTotalPrice}
+                                onChangeText={(text) => {
+                                  setOverrideTotalPrice(text);
+                                }}
+                                placeholder={`Calculated: ${formatCurrency(calculatedTotalPrice, product.currency)}`}
+                                keyboardType="decimal-pad"
+                                style={{
+                                  backgroundColor: colors.background,
+                                  color: colors.foreground,
+                                  paddingHorizontal: 12,
+                                  paddingVertical: 12,
+                                  borderRadius: 12,
+                                }}
+                              />
+                            ) : (
+                              <View
+                                style={{
+                                  backgroundColor: colors.background,
+                                  paddingHorizontal: 12,
+                                  paddingVertical: 12,
+                                  borderRadius: 12,
+                                }}>
+                                <Text
+                                  style={{
+                                    color: colors.foreground,
+                                    fontSize: 14,
+                                  }}>
+                                  {formatCurrency(calculatedTotalPrice, product.currency)}
+                                </Text>
+                              </View>
+                            )}
+                          </View>
+                        </View>
+
+                        {/* Extra Costs Section */}
+                        <View>
+                          <View
+                            className="rounded-2xl px-5 py-4"
+                            style={{
+                              backgroundColor: colors.card,
+                              borderWidth: 0.5,
+                              borderColor: withOpacity(colors.border, 0.2),
+                            }}>
+                            <Text variant="subhead" className="mb-2">
+                              Extra Costs (Optional)
+                            </Text>
+                            <Text variant="footnote" color="tertiary" className="mb-2" style={{ fontSize: 12 }}>
+                              Additional costs like delivery charges
+                            </Text>
+                            <Input
+                              value={extraCosts}
+                              onChangeText={setExtraCosts}
+                              placeholder={`e.g., ${formatCurrency(0, product.currency)}`}
+                              keyboardType="decimal-pad"
                               style={{
                                 backgroundColor: colors.background,
                                 color: colors.foreground,
@@ -583,6 +847,11 @@ export default function RecordSaleScreen() {
                                   }}
                                   allowFontScaling={false}>
                                   {formatCurrency(totalPrice, product.currency)}
+                                  {isTotalPriceOverridden && (
+                                    <Text variant="footnote" color="tertiary" style={{ fontSize: 12, marginLeft: 6 }}>
+                                      (override)
+                                    </Text>
+                                  )}
                                 </Text>
                                 <Text
                                   variant="subhead"
@@ -590,7 +859,17 @@ export default function RecordSaleScreen() {
                                   style={{ fontSize: 13, marginTop: 4 }}
                                   numberOfLines={1}
                                   ellipsizeMode="tail">
-                                  {quantity} × {formatCurrency(product.price, product.currency)}
+                                  {quantity} × {formatCurrency(unitPrice, product.currency)}
+                                  {extraCosts && parseFloat(extraCosts) > 0 && (
+                                    <Text variant="subhead" color="tertiary" style={{ fontSize: 13 }}>
+                                      {' + '}{formatCurrency(parseFloat(extraCosts), product.currency)}
+                                    </Text>
+                                  )}
+                                  {isTotalPriceOverridden && (
+                                    <Text variant="subhead" color="tertiary" style={{ fontSize: 13 }}>
+                                      {' = '}{formatCurrency(calculatedTotalPrice, product.currency)} (calculated)
+                                    </Text>
+                                  )}
                                 </Text>
                               </View>
                             </View>

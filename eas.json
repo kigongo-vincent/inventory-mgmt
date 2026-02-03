@@ -1,0 +1,55 @@
+{
+  "cli": {
+    "version": ">= 16.3.1",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "env": {
+        "API_BASE_URL": "https://inventory-api.bvrdesign.africa/api/v1",
+        "CLOUDINARY_CLOUD_NAME": "your-cloud-name",
+        "CLOUDINARY_API_KEY": "your-api-key",
+        "CLOUDINARY_API_SECRET": "your-api-secret",
+        "CLOUDINARY_UPLOAD_PRESET": "your-upload-preset",
+        "NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME": "dcqtrh3hv",
+        "NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET": "my-broker-preset"
+      },
+      "channel": "development"
+    },
+    "preview": {
+      "distribution": "internal",
+      "env": {
+        "API_BASE_URL": "https://inventory-api.bvrdesign.africa/api/v1",
+        "CLOUDINARY_CLOUD_NAME": "your-cloud-name",
+        "CLOUDINARY_API_KEY": "your-api-key",
+        "CLOUDINARY_API_SECRET": "your-api-secret",
+        "CLOUDINARY_UPLOAD_PRESET": "your-upload-preset",
+        "NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME": "dcqtrh3hv",
+        "NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET": "my-broker-preset"
+      },
+      "channel": "preview"
+    },
+    "production": {
+      "autoIncrement": true,
+      "releaseChannel": "production",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "API_BASE_URL": "https://inventory-api.bvrdesign.africa/api/v1",
+        "CLOUDINARY_CLOUD_NAME": "your-cloud-name",
+        "CLOUDINARY_API_KEY": "your-api-key",
+        "CLOUDINARY_API_SECRET": "your-api-secret",
+        "CLOUDINARY_UPLOAD_PRESET": "your-upload-preset",
+        "NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME": "dcqtrh3hv",
+        "NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET": "my-broker-preset"
+      },
+      "channel": "production"
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}

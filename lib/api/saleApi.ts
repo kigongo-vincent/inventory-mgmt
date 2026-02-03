@@ -40,6 +40,7 @@ export interface CreateSaleRequest {
   productAttributes?: Record<string, any>;
   quantity: number;
   unitPrice: number;
+  extraCosts?: number; // Optional additional costs like delivery charges
   totalPrice: number;
   currency: string;
   sellerId?: number; // Optional - backend will extract from token
@@ -56,6 +57,7 @@ export interface UpdateSaleRequest {
   productAttributes?: Record<string, any>;
   quantity?: number;
   unitPrice?: number;
+  extraCosts?: number; // Optional additional costs like delivery charges
   totalPrice?: number;
   currency?: string;
   sellerId?: string;

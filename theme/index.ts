@@ -2,6 +2,8 @@ import { Theme, DefaultTheme, DarkTheme } from '@react-navigation/native';
 
 import { COLORS } from './colors';
 
+//mew.go
+
 const NAV_THEME: { light: Theme; dark: Theme } = {
   light: {
     dark: false,

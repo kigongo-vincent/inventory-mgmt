@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import React, { useMemo, useState } from 'react';
-import { RefreshControl, ScrollView, View, Pressable, Image } from 'react-native';
+import { RefreshControl, ScrollView, View, Pressable, Image, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { FAB } from '@/components/nativewindui/FAB';
@@ -91,20 +91,54 @@ export default function DashboardScreen() {
   // Calculate average sale value
   const averageSaleValue = totalSales.length > 0 ? totalRevenue / totalSales.length : 0;
 
-  // Top selling products
+  // Top selling products - categorized by provider, then by size
   const topProducts = useMemo(() => {
-    const productSales = new Map<string, { name: string; count: number; revenue: number }>();
+    const productSales = new Map<string, { name: string; provider?: string; size?: string; count: number; revenue: number }>();
     totalSales.forEach((sale) => {
-      const key = `${sale.productName}_${sale.gasSize}`;
-      const existing = productSales.get(key) || { name: `${sale.productName} ${sale.gasSize !== 'none' ? `(${sale.gasSize})` : ''}`, count: 0, revenue: 0 };
+      const provider = sale.productAttributes?.provider || '';
+      const size = sale.productAttributes?.size || sale.productAttributes?.gasSize || '';
+      const productType = sale.productAttributes?.type || sale.productName;
+
+      // Build display name with provider and size
+      let displayName = sale.productName;
+      if (size && size !== 'none') {
+        if (productType === 'Gas Plate') {
+          displayName += ` (${size})`;
+        } else {
+          displayName += ` (${size})`;
+        }
+      }
+      if (provider && (productType === 'Full Gas Cylinder' || productType === 'Regulator' || productType === 'New Kit')) {
+        displayName += ` [${provider}]`;
+      }
+
+      const key = `${sale.productName}_${provider || 'no-provider'}_${size || 'no-size'}`;
+      const existing = productSales.get(key) || {
+        name: displayName.trim(),
+        provider: provider || undefined,
+        size: size !== 'none' ? size : undefined,
+        count: 0,
+        revenue: 0
+      };
       productSales.set(key, {
-        name: existing.name,
+        ...existing,
         count: existing.count + sale.quantity,
         revenue: existing.revenue + sale.totalPrice,
       });
     });
     return Array.from(productSales.values())
-      .sort((a, b) => b.revenue - a.revenue)
+      .sort((a, b) => {
+        // First sort by provider
+        if (a.provider !== b.provider) {
+          return (a.provider || '').localeCompare(b.provider || '');
+        }
+        // Then by size
+        if (a.size !== b.size) {
+          return (a.size || '').localeCompare(b.size || '');
+        }
+        // Finally by revenue
+        return b.revenue - a.revenue;
+      })
       .slice(0, 5);
   }, [totalSales]);
 
@@ -231,7 +265,8 @@ export default function DashboardScreen() {
             <View className="gap-4">
               {/* First Row - Total Revenue & Total Sales */}
               <View className="flex-row gap-4">
-                <View
+                <TouchableOpacity
+                  onPress={() => router.push('/stat-details/total-revenue')}
                   className="flex-1 rounded-2xl px-5 py-5"
                   style={{
                     backgroundColor: colors.card,
@@ -255,9 +290,10 @@ export default function DashboardScreen() {
                   <Text variant="footnote" color="tertiary" style={{ fontSize: 13 }}>
                     {isSuperAdmin ? 'Total Revenue' : 'My Revenue'}
                   </Text>
-                </View>
+                </TouchableOpacity>
 
-                <View
+                <TouchableOpacity
+                  onPress={() => router.push('/stat-details/total-sales')}
                   className="flex-1 rounded-2xl px-5 py-5"
                   style={{
                     backgroundColor: colors.card,
@@ -281,12 +317,13 @@ export default function DashboardScreen() {
                   <Text variant="footnote" color="tertiary" style={{ fontSize: 13 }}>
                     {isSuperAdmin ? 'Total Sales' : 'My Sales'}
                   </Text>
-                </View>
+                </TouchableOpacity>
               </View>
 
               {/* Second Row - Today's Revenue & This Week */}
               <View className="flex-row gap-4">
-                <View
+                <TouchableOpacity
+                  onPress={() => router.push('/stat-details/today-revenue')}
                   className="flex-1 rounded-2xl px-5 py-5"
                   style={{
                     backgroundColor: colors.card,
@@ -313,9 +350,10 @@ export default function DashboardScreen() {
                   <Text variant="footnote" color="tertiary" style={{ fontSize: 11, marginTop: 2 }}>
                     {todaySales.length} sales
                   </Text>
-                </View>
+                </TouchableOpacity>
 
-                <View
+                <TouchableOpacity
+                  onPress={() => router.push('/stat-details/this-week')}
                   className="flex-1 rounded-2xl px-5 py-5"
                   style={{
                     backgroundColor: colors.card,
@@ -361,13 +399,14 @@ export default function DashboardScreen() {
                   <Text variant="footnote" color="tertiary" style={{ fontSize: 11, marginTop: 2 }}>
                     {thisWeekSales.length} sales
                   </Text>
-                </View>
+                </TouchableOpacity>
               </View>
 
               {/* Third Row - This Month & Average Sale (only for super admin) */}
               {isSuperAdmin && (
                 <View className="flex-row gap-4">
-                  <View
+                  <TouchableOpacity
+                    onPress={() => router.push('/stat-details/this-month')}
                     className="flex-1 rounded-2xl px-5 py-5"
                     style={{
                       backgroundColor: colors.card,
@@ -394,9 +433,10 @@ export default function DashboardScreen() {
                     <Text variant="footnote" color="tertiary" style={{ fontSize: 11, marginTop: 2 }}>
                       {thisMonthSales.length} sales
                     </Text>
-                  </View>
+                  </TouchableOpacity>
 
-                  <View
+                  <TouchableOpacity
+                    onPress={() => router.push('/stat-details/avg-sale')}
                     className="flex-1 rounded-2xl px-5 py-5"
                     style={{
                       backgroundColor: colors.card,
@@ -420,7 +460,7 @@ export default function DashboardScreen() {
                     <Text variant="footnote" color="tertiary" style={{ fontSize: 13 }}>
                       Avg Sale Value
                     </Text>
-                  </View>
+                  </TouchableOpacity>
                 </View>
               )}
             </View>
@@ -434,7 +474,8 @@ export default function DashboardScreen() {
               </Text>
               <View className="gap-4">
                 <View className="flex-row gap-4">
-                  <View
+                  <TouchableOpacity
+                    onPress={() => router.push('/stat-details/total-products')}
                     className="flex-1 rounded-2xl px-5 py-5"
                     style={{
                       backgroundColor: colors.card,
@@ -458,9 +499,10 @@ export default function DashboardScreen() {
                     <Text variant="footnote" color="tertiary" style={{ fontSize: 13 }}>
                       Total Products
                     </Text>
-                  </View>
+                  </TouchableOpacity>
 
-                  <View
+                  <TouchableOpacity
+                    onPress={() => router.push('/stat-details/inventory-value')}
                     className="flex-1 rounded-2xl px-5 py-5"
                     style={{
                       backgroundColor: colors.card,
@@ -484,11 +526,12 @@ export default function DashboardScreen() {
                     <Text variant="footnote" color="tertiary" style={{ fontSize: 13 }}>
                       Inventory Value
                     </Text>
-                  </View>
+                  </TouchableOpacity>
                 </View>
 
                 <View className="flex-row gap-4">
-                  <View
+                  <TouchableOpacity
+                    onPress={() => router.push('/stat-details/low-stock')}
                     className="flex-1 rounded-2xl px-5 py-5"
                     style={{
                       backgroundColor: colors.card,
@@ -512,9 +555,10 @@ export default function DashboardScreen() {
                     <Text variant="footnote" color="tertiary" style={{ fontSize: 13 }}>
                       Low Stock
                     </Text>
-                  </View>
+                  </TouchableOpacity>
 
-                  <View
+                  <TouchableOpacity
+                    onPress={() => router.push('/stat-details/out-of-stock')}
                     className="flex-1 rounded-2xl px-5 py-5"
                     style={{
                       backgroundColor: colors.card,
@@ -538,7 +582,7 @@ export default function DashboardScreen() {
                     <Text variant="footnote" color="tertiary" style={{ fontSize: 13 }}>
                       Out of Stock
                     </Text>
-                  </View>
+                  </TouchableOpacity>
                 </View>
               </View>
             </View>
@@ -667,7 +711,19 @@ export default function DashboardScreen() {
                           variant="subhead"
                           style={{ fontSize: 14, fontWeight: '500', marginBottom: 4 }}
                           numberOfLines={1}>
-                          {sale.productName} {sale.gasSize !== 'none' && `(${sale.gasSize})`}
+                          {sale.productName}
+                          {sale.productAttributes?.size && sale.productAttributes.size !== 'none' && (
+                            sale.productAttributes.type === 'Gas Plate'
+                              ? ` (${sale.productAttributes.size})`
+                              : ` (${sale.productAttributes.size})`
+                          )}
+                          {sale.productAttributes?.provider && (
+                            sale.productAttributes.type === 'Full Gas Cylinder' ||
+                              sale.productAttributes.type === 'Regulator' ||
+                              sale.productAttributes.type === 'New Kit'
+                              ? ` [${sale.productAttributes.provider}]`
+                              : ''
+                          )}
                         </Text>
                         <View className="flex-row items-center gap-2">
                           <View
@@ -730,12 +786,12 @@ export default function DashboardScreen() {
           },
           ...(isSuperAdmin
             ? [
-                {
-                  label: 'Add Product',
-                  icon: 'cube.box.fill',
-                  onPress: () => router.push('/(tabs)/inventory?openAddModal=true'),
-                },
-              ]
+              {
+                label: 'Add Product',
+                icon: 'cube.box.fill',
+                onPress: () => router.push('/(tabs)/inventory?openAddModal=true'),
+              },
+            ]
             : []),
         ].filter(Boolean)}
       />

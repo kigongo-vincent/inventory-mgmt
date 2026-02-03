@@ -38,14 +38,16 @@ export default function SalesScreen() {
   const [filterPaymentStatus, setFilterPaymentStatus] = useState<string>('all');
   const [filterProductType, setFilterProductType] = useState<string>('all');
   const [filterSize, setFilterSize] = useState<string>('all');
+  const [filterProvider, setFilterProvider] = useState<string>('all');
   const [filterDateRange, setFilterDateRange] = useState<'all' | 'today' | 'week' | 'month'>('today');
   const [showFiltersSheet, setShowFiltersSheet] = useState(false);
-  const [activeFilterTab, setActiveFilterTab] = useState<'user' | 'branch' | 'payment' | 'productType' | 'size'>('user');
+  const [activeFilterTab, setActiveFilterTab] = useState<'user' | 'branch' | 'payment' | 'productType' | 'size' | 'provider'>('user');
   const [showUserSheet, setShowUserSheet] = useState(false);
   const [showBranchSheet, setShowBranchSheet] = useState(false);
   const [showPaymentStatusSheet, setShowPaymentStatusSheet] = useState(false);
   const [showProductTypeSheet, setShowProductTypeSheet] = useState(false);
   const [showSizeSheet, setShowSizeSheet] = useState(false);
+  const [showProviderSheet, setShowProviderSheet] = useState(false);
 
   let sales = allSales();
 
@@ -77,9 +79,16 @@ export default function SalesScreen() {
 
   if (filterSize !== 'all') {
     sales = sales.filter((sale) => {
-      // Check both productAttributes.gasSize and legacy gasSize field
-      const size = sale.productAttributes?.gasSize || (sale as any).gasSize;
+      // Check both productAttributes.size and productAttributes.gasSize and legacy gasSize field
+      const size = sale.productAttributes?.size || sale.productAttributes?.gasSize || (sale as any).gasSize;
       return size === filterSize;
+    });
+  }
+
+  if (filterProvider !== 'all') {
+    sales = sales.filter((sale) => {
+      const provider = sale.productAttributes?.provider;
+      return provider === filterProvider;
     });
   }
 
@@ -132,14 +141,27 @@ export default function SalesScreen() {
     )
   ).filter((type) => productTypes.includes(type));
 
-  // Get unique sizes from all sales
+  // Get unique sizes from all sales (including plate counts for Gas Plate)
   const allSizes = Array.from(
     new Set(
       allSales()
-        .map((sale) => sale.productAttributes?.gasSize || (sale as any).gasSize)
+        .map((sale) => {
+          // Get size from productAttributes
+          const size = sale.productAttributes?.size || sale.productAttributes?.gasSize || (sale as any).gasSize;
+          return size;
+        })
         .filter((size): size is string => !!size && size !== 'none')
     )
-  ).filter((size) => gasSizes.includes(size));
+  ).sort(); // Sort alphabetically for better UX
+
+  // Get unique providers from all sales
+  const allProviders = Array.from(
+    new Set(
+      allSales()
+        .map((sale) => sale.productAttributes?.provider)
+        .filter((provider): provider is string => !!provider)
+    )
+  ).sort();
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -154,7 +176,11 @@ export default function SalesScreen() {
 
   const getSelectedSizeLabel = () => {
     if (filterSize === 'all') return 'All Sizes';
-    return filterSize === 'none' ? 'N/A' : filterSize;
+    if (filterSize === 'none') return 'N/A';
+    // Format plate counts nicely
+    if (filterSize === '2 plates') return '2 Plates';
+    if (filterSize === '3 plates') return '3 Plates';
+    return filterSize;
   };
 
   // Count active filters (exclude user filter for non-admin users)
@@ -164,6 +190,7 @@ export default function SalesScreen() {
     filterPaymentStatus !== 'all',
     filterProductType !== 'all',
     filterSize !== 'all',
+    filterProvider !== 'all',
   ].filter(Boolean).length;
 
 
@@ -194,6 +221,11 @@ export default function SalesScreen() {
     return filterProductType;
   };
 
+  const getSelectedProviderLabel = () => {
+    if (filterProvider === 'all') return 'All Providers';
+    return filterProvider;
+  };
+
   const getSelectedDateLabel = () => {
     switch (filterDateRange) {
       case 'today':
@@ -220,6 +252,7 @@ export default function SalesScreen() {
           if (filters.filterPaymentStatus) setFilterPaymentStatus(filters.filterPaymentStatus);
           if (filters.filterProductType) setFilterProductType(filters.filterProductType);
           if (filters.filterSize) setFilterSize(filters.filterSize);
+          if (filters.filterProvider) setFilterProvider(filters.filterProvider);
         }
       } catch (error) {
         console.error('Error loading filters:', error);
@@ -251,6 +284,7 @@ export default function SalesScreen() {
           filterPaymentStatus,
           filterProductType,
           filterSize,
+          filterProvider,
         };
         await AsyncStorage.setItem(SALES_FILTERS_STORAGE_KEY, JSON.stringify(filters));
       } catch (error) {
@@ -258,7 +292,7 @@ export default function SalesScreen() {
       }
     };
     saveFilters();
-  }, [filterDateRange, filterUser, filterBranch, filterPaymentStatus, filterProductType, filterSize]);
+  }, [filterDateRange, filterUser, filterBranch, filterPaymentStatus, filterProductType, filterSize, filterProvider]);
 
   if (isLoadingSales && !refreshing) {
     return (
@@ -500,7 +534,19 @@ export default function SalesScreen() {
                               style={{ fontSize: 14, fontWeight: '500' }}
                               numberOfLines={1}
                               className="flex-1">
-                              {sale.productName} {sale.productAttributes?.gasSize && sale.productAttributes.gasSize !== 'none' && `(${sale.productAttributes.gasSize})`}
+                              {sale.productName}
+                              {sale.productAttributes?.size && sale.productAttributes.size !== 'none' && (
+                                sale.productAttributes.type === 'Gas Plate'
+                                  ? ` (${sale.productAttributes.size})`
+                                  : ` (${sale.productAttributes.size})`
+                              )}
+                              {sale.productAttributes?.provider && (
+                                sale.productAttributes.type === 'Full Gas Cylinder' || 
+                                sale.productAttributes.type === 'Regulator' || 
+                                sale.productAttributes.type === 'New Kit'
+                                  ? ` [${sale.productAttributes.provider}]`
+                                  : ''
+                              )}
                             </Text>
                             {isUnpaid && (
                               <View
@@ -606,6 +652,7 @@ export default function SalesScreen() {
                 { key: 'payment', label: 'Payment', icon: 'creditcard.fill' },
                 { key: 'productType', label: 'Product', icon: 'shippingbox.fill' },
                 { key: 'size', label: 'Size', icon: 'square.grid.2x2' },
+                { key: 'provider', label: 'Provider', icon: 'tag.fill' },
               ].map((tab) => {
                 const isActive = activeFilterTab === tab.key;
                 const hasActiveFilter =
@@ -613,7 +660,8 @@ export default function SalesScreen() {
                   (tab.key === 'branch' && filterBranch !== 'all') ||
                   (tab.key === 'payment' && filterPaymentStatus !== 'all') ||
                   (tab.key === 'productType' && filterProductType !== 'all') ||
-                  (tab.key === 'size' && filterSize !== 'all');
+                  (tab.key === 'size' && filterSize !== 'all') ||
+                  (tab.key === 'provider' && filterProvider !== 'all');
 
                 return (
                   <Pressable
@@ -842,13 +890,58 @@ export default function SalesScreen() {
                   </Text>
                   {[
                     { label: 'All Sizes', value: 'all' },
-                    ...allSizes.map((size) => ({ label: size, value: size })),
+                    ...allSizes.map((size) => ({ 
+                      label: size === '2 plates' ? '2 Plates' : size === '3 plates' ? '3 Plates' : size, 
+                      value: size 
+                    })),
                   ].map((option, index) => {
                     const isSelected = filterSize === option.value;
                     return (
                       <Pressable
                         key={`size-${option.value}-${index}`}
                         onPress={() => setFilterSize(option.value)}
+                        style={({ pressed }) => ({
+                          opacity: pressed ? 0.7 : 1,
+                        })}>
+                        <View
+                          className="rounded-xl px-4 py-3 flex-row items-center justify-between"
+                          style={{
+                            backgroundColor: isSelected ? withOpacity(colors.primary, 0.1) : colors.card,
+                            borderWidth: 1,
+                            borderColor: isSelected ? colors.primary : colors.border,
+                          }}>
+                          <Text
+                            variant="body"
+                            style={{
+                              fontSize: 14,
+                              color: isSelected ? colors.primary : colors.foreground,
+                            }}>
+                            {option.label}
+                          </Text>
+                          {isSelected && (
+                            <Icon name="checkmark.circle.fill" size={20} color={colors.primary} />
+                          )}
+                        </View>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              )}
+
+              {activeFilterTab === 'provider' && (
+                <View className="gap-3">
+                  <Text variant="subhead" style={{ marginBottom: 8 }}>
+                    Filter by Provider/Brand
+                  </Text>
+                  {[
+                    { label: 'All Providers', value: 'all' },
+                    ...allProviders.map((provider) => ({ label: provider, value: provider })),
+                  ].map((option, index) => {
+                    const isSelected = filterProvider === option.value;
+                    return (
+                      <Pressable
+                        key={`provider-${option.value}-${index}`}
+                        onPress={() => setFilterProvider(option.value)}
                         style={({ pressed }) => ({
                           opacity: pressed ? 0.7 : 1,
                         })}>
@@ -886,6 +979,7 @@ export default function SalesScreen() {
                     setFilterPaymentStatus('all');
                     setFilterProductType('all');
                     setFilterSize('all');
+                    setFilterProvider('all');
                   }}
                   variant="secondary"
                   className="mt-4">
@@ -967,12 +1061,30 @@ export default function SalesScreen() {
         title="Filter by Size"
         options={[
           { label: 'All Sizes', value: 'all' },
-          ...allSizes.map((size) => ({ label: size, value: size })),
+          ...allSizes.map((size) => ({ 
+            label: size === '2 plates' ? '2 Plates' : size === '3 plates' ? '3 Plates' : size, 
+            value: size 
+          })),
         ]}
         selectedValue={filterSize}
         onSelect={(value) => {
           setFilterSize(value);
           setShowSizeSheet(false);
+        }}
+      />
+
+      <BottomSheet
+        visible={showProviderSheet}
+        onClose={() => setShowProviderSheet(false)}
+        title="Filter by Provider/Brand"
+        options={[
+          { label: 'All Providers', value: 'all' },
+          ...allProviders.map((provider) => ({ label: provider, value: provider })),
+        ]}
+        selectedValue={filterProvider}
+        onSelect={(value) => {
+          setFilterProvider(value);
+          setShowProviderSheet(false);
         }}
       />
 

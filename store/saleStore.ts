@@ -57,6 +57,7 @@ export const useSaleStore = create<SaleState>()(
               productAttributes: saleData.productAttributes || {},
               quantity: saleData.quantity,
               unitPrice: saleData.unitPrice,
+              extraCosts: saleData.extraCosts || 0,
               totalPrice: saleData.totalPrice,
               currency: saleData.currency || 'UGX',
               // sellerId is optional - backend will extract from token context
@@ -102,6 +103,7 @@ export const useSaleStore = create<SaleState>()(
               productAttributes: updates.productAttributes,
               quantity: updates.quantity,
               unitPrice: updates.unitPrice,
+              extraCosts: updates.extraCosts,
               totalPrice: updates.totalPrice,
               currency: updates.currency,
               sellerId: updates.sellerId,

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 
 import { ActivityIndicator } from '@/components/nativewindui/ActivityIndicator';
+import { getAuthToken } from '@/lib/api/config';
 import { useColorScheme } from '@/lib/useColorScheme';
 import { useAuthStore } from '@/store/authStore';
 import { useBranchStore } from '@/store/branchStore';
@@ -27,11 +28,16 @@ export default function Index() {
       return;
     }
 
-    // Fetch data from backend when authenticated
+    // Fetch data from backend when authenticated (only if we have a token to avoid 401/logout)
     const loadData = async () => {
       if (isAuthenticated) {
+        const token = await getAuthToken();
+        if (!token) {
+          // Auth state out of sync (e.g. token cleared); skip fetches to avoid 401s
+          setIsReady(true);
+          return;
+        }
         try {
-          // Fetch all data from backend in parallel to ensure everything is synced
           await Promise.all([
             fetchUsers(),
             fetchProducts(),

@@ -47,6 +47,7 @@ export interface Sale {
   productAttributes: Record<string, any>; // Dynamic attributes from product
   quantity: number;
   unitPrice: number;
+  extraCosts?: number; // Additional costs like delivery charges
   totalPrice: number;
   currency: string;
   sellerId: string;
