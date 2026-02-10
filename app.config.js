@@ -24,10 +24,10 @@ if (process.env.API_BASE_URL) {
 
 module.exports = {
   expo: {
-    name: 'inventory-mgmt',
-    slug: 'inventory-mgmt',
+    name: 'Gas Center',
+    slug: 'gas-center',
     version: '1.0.0',
-    scheme: 'inventory-mgmt',
+    scheme: 'gas-center',
     platforms: ['ios', 'android'],
     web: {
       bundler: 'metro',
@@ -57,7 +57,7 @@ module.exports = {
     splash: {
       image: './assets/icon.jpg',
       resizeMode: 'contain',
-      backgroundColor: '#0062AD', // Primary color: rgb(0, 98, 173)
+      backgroundColor: '#121212', // Dark mode background variant (matches theme foreground context)
     },
     assetBundlePatterns: ['**/*'],
     fonts: [
@@ -95,14 +95,14 @@ module.exports = {
     // Bare workflow requires a literal runtimeVersion (no policy); bump when native code changes
     runtimeVersion: '1.0.0',
     updates: {
-      url: 'https://u.expo.dev/b5046ee7-f1f9-41a0-8b60-52621a55908b',
+      url: 'https://u.expo.dev/389c6510-1955-41bc-aef0-7e247e12fe94',
     },
     extra: {
       // API Configuration
       apiBaseUrl: apiBaseUrl,
 
       eas: {
-        projectId: 'b5046ee7-f1f9-41a0-8b60-52621a55908b',
+        projectId: '389c6510-1955-41bc-aef0-7e247e12fe94',
       },
 
       // Cloudinary Configuration

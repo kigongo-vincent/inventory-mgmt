@@ -11,6 +11,7 @@ import { formatCurrency } from '@/lib/currency';
 import { formatTime } from '@/lib/dateUtils';
 import { useColorScheme } from '@/lib/useColorScheme';
 import { useAuthStore } from '@/store/authStore';
+import { useExpenseStore } from '@/store/expenseStore';
 import { useProductStore } from '@/store/productStore';
 import { useSaleStore } from '@/store/saleStore';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -32,10 +33,14 @@ export default function DashboardScreen() {
   const fetchUsers = useUserStore((state) => state.fetchUsers);
   const fetchProducts = useProductStore((state) => state.fetchProducts);
   const fetchSales = useSaleStore((state) => state.fetchSales);
-  const isLoadingSales = useSaleStore((state) => state.isLoading);
-  const isLoadingProducts = useProductStore((state) => state.isLoading);
-  const isLoadingUsers = useUserStore((state) => state.isLoading);
-  const isLoading = isLoadingSales || isLoadingProducts || isLoadingUsers;
+  const fetchExpenses = useExpenseStore((state) => state.fetchExpenses);
+  const getAllExpenses = useExpenseStore((state) => state.getAllExpenses);
+  const getExpensesByUser = useExpenseStore((state) => state.getExpensesByUser);
+  const isFetchingSales = useSaleStore((state) => state.isFetching);
+  const isFetchingProducts = useProductStore((state) => state.isFetching);
+  const isFetchingUsers = useUserStore((state) => state.isFetching);
+  const isFetchingExpenses = useExpenseStore((state) => state.isFetching);
+  const isFetching = isFetchingSales || isFetchingProducts || isFetchingUsers || isFetchingExpenses;
 
   // For employee users, only show their own sales data
   const userSales = currentUser ? getSalesByUser(currentUser.id) : [];
@@ -90,6 +95,20 @@ export default function DashboardScreen() {
 
   // Calculate average sale value
   const averageSaleValue = totalSales.length > 0 ? totalRevenue / totalSales.length : 0;
+
+  // Expense stats - employees see own, super admin sees all
+  const userExpenses = currentUser ? getExpensesByUser(currentUser.id) : [];
+  const totalExpensesList = isSuperAdmin ? getAllExpenses() : userExpenses;
+  const totalExpensesAmount = totalExpensesList.reduce((sum, e) => sum + e.amount, 0);
+  const todayExpenses = totalExpensesList.filter((e) => {
+    const d = new Date(e.createdAt);
+    d.setHours(0, 0, 0, 0);
+    return d.getTime() === today.getTime();
+  });
+  const todayExpensesAmount = todayExpenses.reduce((sum, e) => sum + e.amount, 0);
+  const thisWeekExpenses = totalExpensesList.filter((e) => new Date(e.createdAt) >= thisWeekStart);
+  const thisWeekExpensesAmount = thisWeekExpenses.reduce((sum, e) => sum + e.amount, 0);
+  const expenseCurrency = totalExpensesList.length > 0 ? totalExpensesList[0].currency : defaultCurrency;
 
   // Top selling products - categorized by provider, then by size
   const topProducts = useMemo(() => {
@@ -166,7 +185,7 @@ export default function DashboardScreen() {
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 5);
 
-  if (isLoading && !refreshing) {
+  if (isFetching && !refreshing) {
     return (
       <View className="flex-1" style={{ backgroundColor: colors.background }}>
         <ScrollView
@@ -238,11 +257,11 @@ export default function DashboardScreen() {
             onRefresh={async () => {
               setRefreshing(true);
               try {
-                // Fetch all data from backend
                 await Promise.all([
                   fetchUsers(),
                   fetchProducts(),
                   fetchSales(),
+                  fetchExpenses(),
                 ]);
               } catch (error) {
                 console.error('Error refreshing data:', error);
@@ -463,6 +482,131 @@ export default function DashboardScreen() {
                   </TouchableOpacity>
                 </View>
               )}
+            </View>
+          </View>
+
+          {/* Expenses Section */}
+          <View className="mb-6">
+            <Text variant="subhead" className="mb-4" style={{ fontSize: 13, color: colors.mutedForeground, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+              Expenses
+            </Text>
+            <View className="gap-4">
+              <View className="flex-row gap-4">
+                <TouchableOpacity
+                  onPress={() => router.push({ pathname: '/(tabs)/user-expenses', params: { userId: currentUser?.id, userName: currentUser?.name } })}
+                  className="flex-1 rounded-2xl px-5 py-5"
+                  style={{
+                    backgroundColor: colors.card,
+                  }}>
+                  <View className="flex-row items-start justify-between mb-3">
+                    <View className="flex-1 pr-2">
+                      <Text
+                        variant="heading"
+                        style={{ color: colors.primary, fontSize: 17 }}
+                        numberOfLines={1}
+                        adjustsFontSizeToFit>
+                        {formatCurrency(totalExpensesAmount, expenseCurrency)}
+                      </Text>
+                    </View>
+                    <View
+                      className="h-11 w-11 items-center justify-center rounded-xl"
+                      style={{ backgroundColor: colors.background }}>
+                      <Icon name="dollarsign.circle.fill" size={22} color={colors.primary} />
+                    </View>
+                  </View>
+                  <Text variant="footnote" color="tertiary" style={{ fontSize: 13 }}>
+                    {isSuperAdmin ? 'Total Expenses' : 'My Expenses'}
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() => router.push({ pathname: '/(tabs)/user-expenses', params: { userId: currentUser?.id, userName: currentUser?.name } })}
+                  className="flex-1 rounded-2xl px-5 py-5"
+                  style={{
+                    backgroundColor: colors.card,
+                  }}>
+                  <View className="flex-row items-start justify-between mb-3">
+                    <View className="flex-1 pr-2">
+                      <Text
+                        variant="heading"
+                        style={{ color: colors.primary, fontSize: 17 }}
+                        numberOfLines={1}
+                        adjustsFontSizeToFit>
+                        {formatCurrency(todayExpensesAmount, expenseCurrency)}
+                      </Text>
+                    </View>
+                    <View
+                      className="h-11 w-11 items-center justify-center rounded-xl"
+                      style={{ backgroundColor: colors.background }}>
+                      <Icon name="sun.max.fill" size={22} color={colors.primary} />
+                    </View>
+                  </View>
+                  <Text variant="footnote" color="tertiary" style={{ fontSize: 13 }}>
+                    Today
+                  </Text>
+                  <Text variant="footnote" color="tertiary" style={{ fontSize: 11, marginTop: 2 }}>
+                    {todayExpenses.length} items
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              <View className="flex-row gap-4">
+                <TouchableOpacity
+                  onPress={() => router.push({ pathname: '/(tabs)/user-expenses', params: { userId: currentUser?.id, userName: currentUser?.name } })}
+                  className="flex-1 rounded-2xl px-5 py-5"
+                  style={{
+                    backgroundColor: colors.card,
+                  }}>
+                  <View className="flex-row items-start justify-between mb-3">
+                    <View className="flex-1 pr-2">
+                      <Text
+                        variant="heading"
+                        style={{ color: colors.primary, fontSize: 17 }}
+                        numberOfLines={1}
+                        adjustsFontSizeToFit>
+                        {formatCurrency(thisWeekExpensesAmount, expenseCurrency)}
+                      </Text>
+                    </View>
+                    <View
+                      className="h-11 w-11 items-center justify-center rounded-xl"
+                      style={{ backgroundColor: colors.background }}>
+                      <Icon name="calendar" size={22} color={colors.primary} />
+                    </View>
+                  </View>
+                  <Text variant="footnote" color="tertiary" style={{ fontSize: 13 }}>
+                    This Week
+                  </Text>
+                  <Text variant="footnote" color="tertiary" style={{ fontSize: 11, marginTop: 2 }}>
+                    {thisWeekExpenses.length} items
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() => router.push({ pathname: '/(tabs)/user-expenses', params: { userId: currentUser?.id, userName: currentUser?.name } })}
+                  className="flex-1 rounded-2xl px-5 py-5"
+                  style={{
+                    backgroundColor: colors.card,
+                  }}>
+                  <View className="flex-row items-start justify-between mb-3">
+                    <View className="flex-1 pr-2">
+                      <Text
+                        variant="heading"
+                        style={{ color: colors.primary, fontSize: 17 }}
+                        numberOfLines={1}
+                        adjustsFontSizeToFit>
+                        {totalExpensesList.length}
+                      </Text>
+                    </View>
+                    <View
+                      className="h-11 w-11 items-center justify-center rounded-xl"
+                      style={{ backgroundColor: colors.background }}>
+                      <Icon name="doc.fill" size={22} color={colors.primary} />
+                    </View>
+                  </View>
+                  <Text variant="footnote" color="tertiary" style={{ fontSize: 13 }}>
+                    Total Items
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
 
@@ -783,6 +927,11 @@ export default function DashboardScreen() {
             label: 'Record Sale',
             icon: 'plus.circle.fill',
             onPress: () => router.push('/record-sale'),
+          },
+          {
+            label: 'Record Expense',
+            icon: 'dollarsign.circle.fill',
+            onPress: () => router.push('/record-expense'),
           },
           ...(isSuperAdmin
             ? [

@@ -34,7 +34,7 @@ export default function UsersScreen() {
   const getSalesByUser = useSaleStore((state) => state.getSalesByUser);
   const settings = useSettingsStore((state) => state.settings);
   const isLoadingUsers = useUserStore((state) => state.isLoading);
-  
+  const isFetchingUsers = useUserStore((state) => state.isFetching);
   // Branch store
   const branches = useBranchStore((state) => state.branches);
   const addBranch = useBranchStore((state) => state.addBranch);
@@ -44,6 +44,7 @@ export default function UsersScreen() {
   const fetchUsers = useUserStore((state) => state.fetchUsers);
   const getBranchByName = useBranchStore((state) => state.getBranchByName);
   const isLoadingBranches = useBranchStore((state) => state.isLoading);
+  const isFetchingBranches = useBranchStore((state) => state.isFetching);
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
@@ -482,7 +483,7 @@ export default function UsersScreen() {
     return sales.length > 0 ? sales[0].currency : settings.defaultCurrency;
   };
 
-  if ((isLoadingUsers || isLoadingBranches) && !refreshing) {
+  if ((isFetchingUsers || isFetchingBranches) && !refreshing) {
     return (
       <View className="flex-1" style={{ backgroundColor: colors.background }}>
         <ScrollView
@@ -1144,6 +1145,7 @@ export default function UsersScreen() {
         showIcons={true}
         options={[
           { label: 'View Sales', value: 'view_sales', icon: 'chart.bar' },
+          { label: 'View Expenses', value: 'view_expenses', icon: 'dollarsign.circle.fill' },
           { label: 'Edit User', value: 'edit', icon: 'pencil' },
           { label: 'Delete User', value: 'delete', icon: 'trash', destructive: true },
         ]}
@@ -1152,6 +1154,15 @@ export default function UsersScreen() {
             if (selectedUser) {
               router.push({
                 pathname: '/(tabs)/user-sales',
+                params: { userId: selectedUser.id, userName: selectedUser.name },
+              });
+            }
+            setShowActionSheet(false);
+            setSelectedUser(null);
+          } else if (value === 'view_expenses') {
+            if (selectedUser) {
+              router.push({
+                pathname: '/(tabs)/user-expenses',
                 params: { userId: selectedUser.id, userName: selectedUser.name },
               });
             }
@@ -1271,6 +1282,11 @@ export default function UsersScreen() {
             label: 'Record Sale',
             icon: 'plus.circle.fill',
             onPress: () => router.push('/record-sale'),
+          },
+          {
+            label: 'Record Expense',
+            icon: 'dollarsign.circle.fill',
+            onPress: () => router.push('/record-expense'),
           },
           ...(currentUser && (currentUser.role?.toLowerCase() === 'super_admin' || currentUser.role?.toLowerCase() === 'superadmin')
             ? [

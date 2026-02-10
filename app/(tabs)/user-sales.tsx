@@ -21,7 +21,7 @@ export default function UserSalesScreen() {
   const getSalesByUser = useSaleStore((state) => state.getSalesByUser);
   const getUserById = useUserStore((state) => state.getUserById);
   const fetchSalesByUser = useSaleStore((state) => state.fetchSalesByUser);
-  const isLoadingSales = useSaleStore((state) => state.isLoading);
+  const isFetchingSales = useSaleStore((state) => state.isFetching);
 
   // Determine which user's sales to show
   const targetUserId = params.userId || currentUser?.id;
@@ -48,7 +48,7 @@ export default function UserSalesScreen() {
     });
   };
 
-  if (isLoadingSales && !refreshing) {
+  if (isFetchingSales && !refreshing) {
     return (
       <View className="flex-1" style={{ backgroundColor: colors.background }}>
         <ScrollView

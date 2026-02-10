@@ -39,7 +39,7 @@ export default function ForgotPasswordScreen() {
     // Validate email or phone format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const phoneRegex = /^[0-9]{10,}$/;
-    
+
     if (!emailRegex.test(emailOrPhone) && !phoneRegex.test(emailOrPhone.replace(/\s+/g, ''))) {
       Alert.alert('Error', 'Please enter a valid email or phone number');
       return;
@@ -49,11 +49,11 @@ export default function ForgotPasswordScreen() {
     try {
       // Simulate API call to send OTP
       await new Promise((resolve) => setTimeout(resolve, 1500));
-      
+
       // Generate a mock OTP (in production, this would come from the server)
       const mockOtp = Math.floor(100000 + Math.random() * 900000).toString();
       setSentOtp(mockOtp);
-      
+
       // For demo purposes, show the OTP in an alert
       Alert.alert(
         'OTP Sent',
@@ -102,7 +102,7 @@ export default function ForgotPasswordScreen() {
       // Find user by email/phone (in production, this would be a proper lookup)
       // For demo, we'll update the first user found
       const user = users[0];
-      
+
       if (user) {
         updateUser(user.id, { password: newPassword });
       }

@@ -4,14 +4,16 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 
 import { saleApi } from '@/lib/api/saleApi';
 import { Sale } from '@/types';
+import { useProductStore } from '@/store/productStore';
 
 interface SaleState {
   sales: Sale[];
   isLoading: boolean;
+  isFetching: boolean; // true only during fetch* / sync; use for full-page skeleton
   error: string | null;
   addSale: (sale: Omit<Sale, 'id' | 'createdAt' | 'syncStatus'>, syncStatus?: 'online' | 'offline') => Promise<void>;
   updateSale: (id: string, updates: Partial<Sale>) => Promise<void>;
-  deleteSale: (id: string) => Promise<void>;
+  deleteSale: (id: string, options?: { revertStock?: boolean }) => Promise<void>;
   getSaleById: (id: string) => Sale | undefined;
   getSalesByUser: (userId: string) => Sale[];
   getSalesByBranch: (branch: string) => Sale[];
@@ -29,6 +31,7 @@ export const useSaleStore = create<SaleState>()(
     (set, get) => ({
       sales: [],
       isLoading: false,
+      isFetching: false,
       error: null,
       addSale: async (saleData, syncStatus: 'online' | 'offline' = 'online') => {
         try {
@@ -137,30 +140,42 @@ export const useSaleStore = create<SaleState>()(
           set({ isLoading: false });
         }
       },
-      deleteSale: async (id) => {
+      deleteSale: async (id, options?: { revertStock?: boolean }) => {
+        const idStr = String(id);
         try {
           set({ isLoading: true, error: null });
-          const sale = get().getSaleById(id);
+          const sale = get().getSaleById(idStr);
           
           if (!sale) {
             throw new Error('Sale not found');
           }
 
+          // If revertStock is true, add the sale quantity back to the product
+          if (options?.revertStock && sale.productId && sale.quantity > 0) {
+            const increased = await useProductStore.getState().increaseProductQuantity(
+              String(sale.productId),
+              sale.quantity
+            );
+            if (!increased) {
+              throw new Error('Failed to revert product stock. The product may no longer exist.');
+            }
+          }
+
           // Only allow deletion of offline sales (local sales)
           if (sale.syncStatus === 'offline') {
-            // Remove from local storage
+            // Remove from local storage (compare as string so number/string id both match)
             set((state) => ({
-              sales: state.sales.filter((s) => s.id !== id),
+              sales: state.sales.filter((s) => String(s.id) !== idStr),
             }));
           } else {
             // For synced/online sales, try to delete from backend if ID is numeric
-            const isNumericId = /^\d+$/.test(id);
+            const isNumericId = /^\d+$/.test(idStr);
             if (isNumericId) {
               try {
-                await saleApi.deleteSale(id);
+                await saleApi.deleteSale(idStr);
                 // Remove from local storage after successful backend deletion
                 set((state) => ({
-                  sales: state.sales.filter((s) => s.id !== id),
+                  sales: state.sales.filter((s) => String(s.id) !== idStr),
                 }));
               } catch (error: any) {
                 throw new Error('Failed to delete sale from server. Please try again when online.');
@@ -177,7 +192,8 @@ export const useSaleStore = create<SaleState>()(
         }
       },
       getSaleById: (id) => {
-        return get().sales.find((sale) => sale.id === id);
+        const idStr = String(id);
+        return get().sales.find((sale) => String(sale.id) === idStr);
       },
       getSalesByUser: (userId) => {
         return get().sales.filter((sale) => sale.sellerId === userId);
@@ -195,7 +211,7 @@ export const useSaleStore = create<SaleState>()(
       },
       fetchSales: async () => {
         try {
-          set({ isLoading: true, error: null });
+          set({ isFetching: true, error: null });
           const sales = await saleApi.getAllSales();
           // Mark all fetched sales as synced
           const syncedSales = sales.map((s) => ({ ...s, syncStatus: 'synced' as const }));
@@ -203,12 +219,12 @@ export const useSaleStore = create<SaleState>()(
         } catch (error: any) {
           set({ error: error.message || 'Failed to fetch sales' });
         } finally {
-          set({ isLoading: false });
+          set({ isFetching: false });
         }
       },
       fetchSalesByUser: async (userId: string) => {
         try {
-          set({ isLoading: true, error: null });
+          set({ isFetching: true, error: null });
           const sales = await saleApi.getSalesByUser(userId);
           // Mark all fetched sales as synced
           const syncedSales = sales.map((s) => ({ ...s, syncStatus: 'synced' as const }));
@@ -221,12 +237,12 @@ export const useSaleStore = create<SaleState>()(
         } catch (error: any) {
           set({ error: error.message || 'Failed to fetch sales by user' });
         } finally {
-          set({ isLoading: false });
+          set({ isFetching: false });
         }
       },
       fetchSalesByBranch: async (branch: string) => {
         try {
-          set({ isLoading: true, error: null });
+          set({ isFetching: true, error: null });
           const sales = await saleApi.getSalesByBranch(branch);
           // Mark all fetched sales as synced
           const syncedSales = sales.map((s) => ({ ...s, syncStatus: 'synced' as const }));
@@ -239,12 +255,12 @@ export const useSaleStore = create<SaleState>()(
         } catch (error: any) {
           set({ error: error.message || 'Failed to fetch sales by branch' });
         } finally {
-          set({ isLoading: false });
+          set({ isFetching: false });
         }
       },
       fetchSalesByDateRange: async (startDate: string, endDate: string) => {
         try {
-          set({ isLoading: true, error: null });
+          set({ isFetching: true, error: null });
           const sales = await saleApi.getSalesByDateRange(startDate, endDate);
           // Mark all fetched sales as synced
           const syncedSales = sales.map((s) => ({ ...s, syncStatus: 'synced' as const }));
@@ -257,12 +273,12 @@ export const useSaleStore = create<SaleState>()(
         } catch (error: any) {
           set({ error: error.message || 'Failed to fetch sales by date range' });
         } finally {
-          set({ isLoading: false });
+          set({ isFetching: false });
         }
       },
       syncSales: async (productIdMap?: Map<string, string>) => {
         try {
-          set({ isLoading: true, error: null });
+          set({ isFetching: true, error: null });
           const { sales } = get();
           const offlineSales = sales.filter((s) => s.syncStatus === 'offline');
 
@@ -330,7 +346,7 @@ export const useSaleStore = create<SaleState>()(
           set({ error: error.message || 'Failed to sync sales' });
           throw error; // Re-throw to allow caller to handle
         } finally {
-          set({ isLoading: false });
+          set({ isFetching: false });
         }
       },
     }),

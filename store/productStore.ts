@@ -9,6 +9,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 interface ProductState {
   products: Product[];
   isLoading: boolean;
+  isFetching: boolean;
   error: string | null;
   addProduct: (product: Omit<Product, 'id' | 'createdAt' | 'syncStatus'>, syncStatus?: 'online' | 'offline') => Promise<void>;
   updateProduct: (id: string, updates: Partial<Product>) => Promise<void>;
@@ -24,6 +25,7 @@ interface ProductState {
     companyId: string
   ) => Product[];
   reduceProductQuantity: (id: string, quantity: number) => Promise<boolean>;
+  increaseProductQuantity: (id: string, quantity: number) => Promise<boolean>;
   fetchProducts: () => Promise<void>;
   fetchProductsByCompany: (companyId: string) => Promise<void>;
   syncProducts: () => Promise<void>;
@@ -36,6 +38,7 @@ export const useProductStore = create<ProductState>()(
     (set, get) => ({
       products: [],
       isLoading: false,
+      isFetching: false,
       error: null,
       addProduct: async (productData, syncStatus: 'online' | 'offline' = 'online') => {
         try {
@@ -199,9 +202,27 @@ export const useProductStore = create<ProductState>()(
           set({ isLoading: false });
         }
       },
-      fetchProducts: async () => {
+      increaseProductQuantity: async (id, quantity) => {
         try {
           set({ isLoading: true, error: null });
+          const product = get().getProductById(id);
+          if (!product) {
+            set({ error: 'Product not found' });
+            return false;
+          }
+          const newQuantity = product.quantity + quantity;
+          await get().updateProduct(id, { quantity: newQuantity });
+          return true;
+        } catch (error: any) {
+          set({ error: error.message || 'Failed to increase product quantity' });
+          return false;
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+      fetchProducts: async () => {
+        try {
+          set({ isFetching: true, error: null });
           const products = await productApi.getAllProducts();
           // Mark all fetched products as synced
           const syncedProducts = products.map((p) => ({
@@ -213,12 +234,12 @@ export const useProductStore = create<ProductState>()(
           console.error('Error fetching products:', error);
           set({ error: error.message || 'Failed to fetch products' });
         } finally {
-          set({ isLoading: false });
+          set({ isFetching: false });
         }
       },
       fetchProductsByCompany: async (companyId: string) => {
         try {
-          set({ isLoading: true, error: null });
+          set({ isFetching: true, error: null });
           // Backend automatically filters by company via middleware
           const products = await productApi.getAllProducts();
           // Replace products for this company with fetched ones, keep other companies' products
@@ -235,12 +256,12 @@ export const useProductStore = create<ProductState>()(
           console.error('Error fetching products by company:', error);
           set({ error: error.message || 'Failed to fetch products by company' });
         } finally {
-          set({ isLoading: false });
+          set({ isFetching: false });
         }
       },
       syncProducts: async () => {
         try {
-          set({ isLoading: true, error: null });
+          set({ isFetching: true, error: null });
           const { products } = get();
           const offlineProducts = products.filter((p) => p.syncStatus === 'offline');
 
@@ -268,7 +289,7 @@ export const useProductStore = create<ProductState>()(
         } catch (error: any) {
           set({ error: error.message || 'Failed to sync products' });
         } finally {
-          set({ isLoading: false });
+          set({ isFetching: false });
         }
       },
     }),

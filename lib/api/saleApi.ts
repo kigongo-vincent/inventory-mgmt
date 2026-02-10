@@ -23,7 +23,7 @@ export function mapBackendSaleToFrontend(sale: any): Sale {
   
   return {
     ...rest,
-    id: id || ID?.toString() || String(ID || ''),
+    id: (id != null ? String(id) : ID != null ? String(ID) : ''),
     createdAt: createdAt || CreatedAt || new Date().toISOString(),
     productId: rest.productId?.toString() || String(rest.productId || ''),
     sellerId: rest.sellerId?.toString() || String(rest.sellerId || ''),

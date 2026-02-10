@@ -7,6 +7,7 @@ import { getAuthToken } from '@/lib/api/config';
 import { useColorScheme } from '@/lib/useColorScheme';
 import { useAuthStore } from '@/store/authStore';
 import { useBranchStore } from '@/store/branchStore';
+import { useExpenseStore } from '@/store/expenseStore';
 import { useProductStore } from '@/store/productStore';
 import { useSaleStore } from '@/store/saleStore';
 import { useUserStore } from '@/store/userStore';
@@ -19,6 +20,7 @@ export default function Index() {
   const fetchProducts = useProductStore((state) => state.fetchProducts);
   const fetchSales = useSaleStore((state) => state.fetchSales);
   const fetchBranches = useBranchStore((state) => state.fetchBranches);
+  const fetchExpenses = useExpenseStore((state) => state.fetchExpenses);
   const { colors } = useColorScheme();
   const [isReady, setIsReady] = useState(false);
 
@@ -43,6 +45,7 @@ export default function Index() {
             fetchProducts(),
             fetchSales(),
             fetchBranches(),
+            fetchExpenses(),
           ]);
         } catch (error) {
           console.error('Error loading data from backend:', error);
@@ -53,7 +56,7 @@ export default function Index() {
     };
 
     loadData();
-  }, [hasHydrated, isAuthenticated, fetchUsers, fetchProducts, fetchSales, fetchBranches]);
+  }, [hasHydrated, isAuthenticated, fetchUsers, fetchProducts, fetchSales, fetchBranches, fetchExpenses]);
 
   // Show loading while waiting for hydration or data loading
   if (!hasHydrated || !isReady) {

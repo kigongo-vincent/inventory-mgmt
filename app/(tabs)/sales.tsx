@@ -18,6 +18,7 @@ import { useSaleStore } from '@/store/saleStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { useUserStore } from '@/store/userStore';
 import { withOpacity } from '@/theme/with-opacity';
+import { Sale } from '@/types';
 
 const SALES_FILTERS_STORAGE_KEY = 'sales-filters';
 
@@ -28,10 +29,16 @@ export default function SalesScreen() {
   const currentUser = useAuthStore((state) => state.currentUser);
   const normalizedRole = currentUser?.role?.toLowerCase();
   const isSuperAdmin = normalizedRole === 'super_admin' || normalizedRole === 'superadmin';
-  const allSales = useSaleStore((state) => state.getAllSales);
+  const salesFromStore = useSaleStore((state) => state.sales);
   const fetchSales = useSaleStore((state) => state.fetchSales);
-  const isLoadingSales = useSaleStore((state) => state.isLoading);
+  const deleteSale = useSaleStore((state) => state.deleteSale);
+  const isFetchingSales = useSaleStore((state) => state.isFetching);
   const users = useUserStore((state) => state.users);
+
+  const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
+  const [showSaleActionSheet, setShowSaleActionSheet] = useState(false);
+  const [saleToDelete, setSaleToDelete] = useState<Sale | null>(null);
+  const [showDeleteConfirmSheet, setShowDeleteConfirmSheet] = useState(false);
 
   const [filterUser, setFilterUser] = useState<string>('all');
   const [filterBranch, setFilterBranch] = useState<string>('all');
@@ -49,7 +56,7 @@ export default function SalesScreen() {
   const [showSizeSheet, setShowSizeSheet] = useState(false);
   const [showProviderSheet, setShowProviderSheet] = useState(false);
 
-  let sales = allSales();
+  let sales = salesFromStore;
 
   // For non-admin users, only show their own sales
   if (!isSuperAdmin && currentUser) {
@@ -135,7 +142,7 @@ export default function SalesScreen() {
   // Get unique product types from all sales
   const allProductTypes = Array.from(
     new Set(
-      allSales()
+      salesFromStore
         .map((sale) => sale.productAttributes?.type || (sale as any).productType)
         .filter((type): type is string => !!type)
     )
@@ -144,7 +151,7 @@ export default function SalesScreen() {
   // Get unique sizes from all sales (including plate counts for Gas Plate)
   const allSizes = Array.from(
     new Set(
-      allSales()
+      salesFromStore
         .map((sale) => {
           // Get size from productAttributes
           const size = sale.productAttributes?.size || sale.productAttributes?.gasSize || (sale as any).gasSize;
@@ -157,7 +164,7 @@ export default function SalesScreen() {
   // Get unique providers from all sales
   const allProviders = Array.from(
     new Set(
-      allSales()
+      salesFromStore
         .map((sale) => sale.productAttributes?.provider)
         .filter((provider): provider is string => !!provider)
     )
@@ -294,7 +301,7 @@ export default function SalesScreen() {
     saveFilters();
   }, [filterDateRange, filterUser, filterBranch, filterPaymentStatus, filterProductType, filterSize, filterProvider]);
 
-  if (isLoadingSales && !refreshing) {
+  if (isFetchingSales && !refreshing) {
     return (
       <View className="flex-1" style={{ backgroundColor: colors.background }}>
         <ScrollView
@@ -502,7 +509,8 @@ export default function SalesScreen() {
                     <Pressable
                       key={sale.id}
                       onPress={() => {
-                        router.push(`/sale-details/${sale.id}`);
+                        setSelectedSale(sale);
+                        setShowSaleActionSheet(true);
                       }}>
                       <View
                         className="flex-row items-center gap-4 rounded-2xl px-5 py-4"
@@ -600,9 +608,9 @@ export default function SalesScreen() {
                         <View className="items-end ml-2">
                           <Text
                             variant="footnote"
-                            style={{ 
-                              color: isUnpaid ? '#FF9500' : colors.primary, 
-                              fontSize: 13, 
+                            style={{
+                              color: isUnpaid ? '#FF9500' : colors.primary,
+                              fontSize: 13,
                               marginBottom: 2,
                               fontWeight: isUnpaid ? '600' : '500',
                             }}
@@ -1088,6 +1096,62 @@ export default function SalesScreen() {
         }}
       />
 
+      {/* Sale action sheet: View details or Delete */}
+      <BottomSheet
+        visible={showSaleActionSheet}
+        onClose={() => {
+          setShowSaleActionSheet(false);
+          setSelectedSale(null);
+        }}
+        title={selectedSale?.productName}
+        showIcons={true}
+        options={[
+          { label: 'View details', value: 'view', icon: 'eye' },
+          { label: 'Delete sale', value: 'delete', icon: 'trash', destructive: true },
+        ]}
+        onSelect={(value) => {
+          if (value === 'view' && selectedSale) {
+            setShowSaleActionSheet(false);
+            setSelectedSale(null);
+            router.push(`/sale-details/${selectedSale.id}`);
+          } else if (value === 'delete' && selectedSale) {
+            setSaleToDelete(selectedSale);
+            setShowSaleActionSheet(false);
+            setShowDeleteConfirmSheet(true);
+          }
+        }}
+      />
+
+      {/* Delete confirmation: Delete only vs Delete and revert stock */}
+      <BottomSheet
+        visible={showDeleteConfirmSheet}
+        onClose={() => {
+          setShowDeleteConfirmSheet(false);
+          setSaleToDelete(null);
+        }}
+        title={
+          saleToDelete
+            ? `Delete sale of ${saleToDelete.quantity} × ${saleToDelete.productName}?`
+            : 'Delete sale?'
+        }
+        showIcons={true}
+        options={[
+          { label: 'Delete only', value: 'delete_only', icon: 'trash', destructive: true },
+          { label: 'Delete and revert stock', value: 'delete_revert', icon: 'arrow.uturn.backward', destructive: true },
+        ]}
+        onSelect={async (value) => {
+          const sale = saleToDelete;
+          if (!sale) return;
+          try {
+            await deleteSale(sale.id, { revertStock: value === 'delete_revert' });
+            setShowDeleteConfirmSheet(false);
+            setSaleToDelete(null);
+          } catch (error: any) {
+            Alert.alert('Error', error.message || 'Failed to delete sale');
+          }
+        }}
+      />
+
       {/* FAB */}
       <FAB
         options={[
@@ -1095,6 +1159,11 @@ export default function SalesScreen() {
             label: 'Record Sale',
             icon: 'plus.circle.fill',
             onPress: () => router.push('/record-sale'),
+          },
+          {
+            label: 'Record Expense',
+            icon: 'dollarsign.circle.fill',
+            onPress: () => router.push('/record-expense'),
           },
           ...(isSuperAdmin
             ? [

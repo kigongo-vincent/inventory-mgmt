@@ -1,9 +1,9 @@
 {
   "expo": {
-    "name": "inventory-mgmt",
-    "slug": "inventory-mgmt",
+    "name": "Gas Center",
+    "slug": "gas-center",
     "version": "1.0.0",
-    "scheme": "inventory-mgmt",
+    "scheme": "gas-center",
     "platforms": ["ios", "android"],
     "web": {
       "bundler": "metro",
@@ -31,7 +31,7 @@
     "splash": {
       "image": "./assets/logo.png",
       "resizeMode": "contain",
-      "backgroundColor": "#0062AD"
+      "backgroundColor": "#121212"
     },
     "assetBundlePatterns": ["**/*"],
     "ios": {

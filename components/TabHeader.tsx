@@ -16,9 +16,8 @@ export function TabHeader() {
   const currentUser = useAuthStore((state) => state.currentUser);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const [searchQuery, setSearchQuery] = useState('');
-  const getUnreadCount = useNotificationStore((state) => state.getUnreadCount);
+  const unreadCount = useNotificationStore((state) => state.unreadCount);
   const fetchNotifications = useNotificationStore((state) => state.fetchNotifications);
-  const unreadCount = getUnreadCount();
   const appStateRef = useRef(AppState.currentState);
 
   // Fetch notifications on mount and when app returns to foreground (no polling)

@@ -21,7 +21,7 @@ export function OnlineOfflineConfirmation({
   onClose,
   onConfirm,
   title = 'Save Location',
-  message = 'Where would you like to save this item?',
+  message = 'Where would you like to save this product?',
 }: OnlineOfflineConfirmationProps) {
   const { colors } = useColorScheme();
 

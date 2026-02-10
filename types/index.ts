@@ -93,6 +93,19 @@ export interface Branch {
   syncStatus?: SyncStatus;
 }
 
+export interface Expense {
+  id: string;
+  amount: number;
+  description: string;
+  category: string;
+  currency: string;
+  userId: string;
+  branchId: string;
+  branch?: string;
+  user?: { id: string; name: string };
+  createdAt: string;
+}
+
 
 
 

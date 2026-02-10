@@ -1,5 +1,16 @@
 import { Notification, NotificationType } from '@/types';
 import { apiRequest } from './config';
+import { parseDate } from '@/lib/dateUtils';
+
+function normalizeNotificationCreatedAt(n: any): string {
+  const raw = n.CreatedAt ?? n.createdAt;
+  if (raw == null || raw === '') return new Date().toISOString();
+  try {
+    return parseDate(typeof raw === 'string' ? raw : new Date(raw).toISOString()).toISOString();
+  } catch {
+    return new Date().toISOString();
+  }
+}
 
 export interface CreateNotificationRequest {
   userId: number;
@@ -18,12 +29,12 @@ export const notificationApi = {
     
     // Transform backend format to frontend format
     return response.notifications.map((n: any, index: number) => ({
-      id: n.id?.toString() || `notif_${Date.now()}_${index}_${Math.random().toString(36).substr(2, 9)}`,
+      id: n.id?.toString() || n.ID?.toString() || `notif_${Date.now()}_${index}_${Math.random().toString(36).substr(2, 9)}`,
       type: n.type as NotificationType,
       title: n.title,
       message: n.message,
       read: n.read || false,
-      createdAt: n.createdAt || new Date().toISOString(),
+      createdAt: normalizeNotificationCreatedAt(n),
       relatedId: n.relatedId?.toString(),
     }));
   },
@@ -36,12 +47,12 @@ export const notificationApi = {
     
     // Transform backend format to frontend format
     return response.notifications.map((n: any, index: number) => ({
-      id: n.id?.toString() || `notif_${Date.now()}_${index}_${Math.random().toString(36).substr(2, 9)}`,
+      id: n.id?.toString() || n.ID?.toString() || `notif_${Date.now()}_${index}_${Math.random().toString(36).substr(2, 9)}`,
       type: n.type as NotificationType,
       title: n.title,
       message: n.message,
       read: n.read || false,
-      createdAt: n.createdAt || new Date().toISOString(),
+      createdAt: normalizeNotificationCreatedAt(n),
       relatedId: n.relatedId?.toString(),
     }));
   },
@@ -90,12 +101,12 @@ export const notificationApi = {
     });
     
     return {
-      id: response.id?.toString() || `notif_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: response.id?.toString() || response.ID?.toString() || `notif_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       type: response.type as NotificationType,
       title: response.title,
       message: response.message,
       read: response.read || false,
-      createdAt: response.createdAt || new Date().toISOString(),
+      createdAt: normalizeNotificationCreatedAt(response),
       relatedId: response.relatedId?.toString(),
     };
   },

@@ -17,6 +17,7 @@ function normalizeBranch(branch: any): Branch {
 interface BranchState {
   branches: Branch[];
   isLoading: boolean;
+  isFetching: boolean;
   error: string | null;
   addBranch: (
     branch: Omit<Branch, 'id' | 'createdAt' | 'syncStatus'>,
@@ -37,6 +38,7 @@ export const useBranchStore = create<BranchState>()(
     (set, get) => ({
       branches: [],
       isLoading: false,
+      isFetching: false,
       error: null,
       addBranch: async (branchData, syncStatus: 'online' | 'offline' = 'online') => {
         try {
@@ -165,7 +167,7 @@ export const useBranchStore = create<BranchState>()(
       },
       fetchBranches: async () => {
         try {
-          set({ isLoading: true, error: null });
+          set({ isFetching: true, error: null });
           const branches = await branchApi.getAllBranches();
           // Normalize branch objects: convert ID (capital) to id (lowercase) and companyId
           const syncedBranches = branches.map((b: any) => ({
@@ -176,12 +178,12 @@ export const useBranchStore = create<BranchState>()(
         } catch (error: any) {
           set({ error: error.message || 'Failed to fetch branches' });
         } finally {
-          set({ isLoading: false });
+          set({ isFetching: false });
         }
       },
       fetchBranchesByCompany: async (companyId: string) => {
         try {
-          set({ isLoading: true, error: null });
+          set({ isFetching: true, error: null });
           const branches = await branchApi.getBranchesByCompany(companyId);
           // Normalize branch objects: convert ID (capital) to id (lowercase) and companyId
           const syncedBranches = branches.map((b: any) => ({
@@ -197,12 +199,12 @@ export const useBranchStore = create<BranchState>()(
         } catch (error: any) {
           set({ error: error.message || 'Failed to fetch branches by company' });
         } finally {
-          set({ isLoading: false });
+          set({ isFetching: false });
         }
       },
       syncBranches: async () => {
         try {
-          set({ isLoading: true, error: null });
+          set({ isFetching: true, error: null });
           const offlineBranches = get().branches.filter(
             (b) => b.syncStatus === 'offline'
           );
@@ -230,7 +232,7 @@ export const useBranchStore = create<BranchState>()(
         } catch (error: any) {
           set({ error: error.message || 'Failed to sync branches' });
         } finally {
-          set({ isLoading: false });
+          set({ isFetching: false });
         }
       },
     }),

@@ -97,7 +97,7 @@ export default function EditSaleScreen() {
 
   const qty = quantity ? parseInt(quantity, 10) : sale.quantity;
   const extraCostsValue = extraCosts ? parseFloat(extraCosts) || 0 : (sale.extraCosts || 0);
-  const totalPrice = (sale.unitPrice * (isNaN(qty) ? sale.quantity : qty)) + extraCostsValue;
+  const totalPrice = Math.max(0, (sale.unitPrice * (isNaN(qty) ? sale.quantity : qty)) - extraCostsValue);
 
   const handleUpdateSale = async () => {
     if (!quantity.trim()) {
@@ -304,7 +304,7 @@ export default function EditSaleScreen() {
                     Extra Costs (Optional)
                   </Text>
                   <Text variant="footnote" color="tertiary" className="mb-2" style={{ fontSize: 12 }}>
-                    Additional costs like delivery charges
+                    Deducted from total (e.g. delivery discount, embedded costs)
                   </Text>
                   <Input
                     value={extraCosts}
@@ -367,7 +367,7 @@ export default function EditSaleScreen() {
                         {quantity} × {formatCurrency(sale.unitPrice, sale.currency)}
                         {extraCosts && parseFloat(extraCosts) > 0 && (
                           <Text variant="subhead" color="tertiary" style={{ fontSize: 13 }}>
-                            {' + '}{formatCurrency(parseFloat(extraCosts), sale.currency)}
+                            {' − '}{formatCurrency(parseFloat(extraCosts), sale.currency)}
                           </Text>
                         )}
                       </Text>

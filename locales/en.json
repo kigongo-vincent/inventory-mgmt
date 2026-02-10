@@ -52,6 +52,7 @@
     "title": "Inventory",
     "manageInventory": "Manage your product inventory",
     "addProduct": "Add Product",
+    "addItem": "Add Product",
     "editProduct": "Edit Product",
     "deleteProduct": "Delete Product",
     "productName": "Product Name",
@@ -61,7 +62,7 @@
     "gasSize": "Gas Size",
     "productImage": "Product Image",
     "noProducts": "No products in inventory",
-    "addProductsToGetStarted": "Add products to get started",
+    "addProductsToGetStarted": "Add products or services to get started",
     "inStock": "In Stock",
     "lowStock": "Low Stock",
     "outOfStock": "Out of Stock"

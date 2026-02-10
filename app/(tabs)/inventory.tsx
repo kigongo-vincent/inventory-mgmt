@@ -54,20 +54,16 @@ export default function InventoryScreen() {
   const syncProducts = useProductStore((state) => state.syncProducts);
   const settings = useSettingsStore((state) => state.settings);
   const isLoadingProducts = useProductStore((state) => state.isLoading);
+  const isFetchingProducts = useProductStore((state) => state.isFetching);
 
   // Get dynamic product types and gas sizes from settings
   // Try to get from productProperties first (dynamic system), fallback to legacy productTypes
   const productProperties = settings.productProperties || [];
   const typeProperty = productProperties.find(p => p.id === 'prop_type');
-  let productTypes = typeProperty?.options && typeProperty.options.length > 0 
-    ? typeProperty.options 
+  const productTypes = typeProperty?.options && typeProperty.options.length > 0
+    ? typeProperty.options
     : settings.productTypes || [];
-  
-  // Ensure "New Kit" is always included if missing (for backward compatibility)
-  if (!productTypes.includes('New Kit')) {
-    productTypes = [...productTypes, 'New Kit'];
-  }
-  
+
   const gasSizes = settings.gasSizes || [];
 
   const [showAddForm, setShowAddForm] = useState(false);
@@ -82,6 +78,8 @@ export default function InventoryScreen() {
   }, [params.openAddModal, isSuperAdmin]);
   const [showEditForm, setShowEditForm] = useState(false);
   const [showActionSheet, setShowActionSheet] = useState(false);
+  const [showAddStockModal, setShowAddStockModal] = useState(false);
+  const [addStockQuantity, setAddStockQuantity] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
   const [productType, setProductType] = useState<ProductType>('');
@@ -89,31 +87,22 @@ export default function InventoryScreen() {
   const [provider, setProvider] = useState<string>('');
   const [customProvider, setCustomProvider] = useState<string>('');
   const [showCustomProviderInput, setShowCustomProviderInput] = useState(false);
-  const [category, setCategory] = useState<string>('Product');
   const allProducts = useProductStore((state) => state.products);
 
-  // Filter product types based on category
-  // Cylinder Refill is the only Service - all others are Products
-  const filteredProductTypes = useMemo(() => {
-    return productTypes.filter(type => {
-      if (type === 'Cylinder Refill') {
-        // Cylinder Refill only shows when category is Service
-        return category === 'Service';
-      } else {
-        // All other product types only show when category is Product
-        return category === 'Product';
-      }
-    });
-  }, [productTypes, category]);
+  // Products only: filter out New Kit (sale bundle) and Cylinder Refill (service, not product)
+  const filteredProductTypes = useMemo(
+    () => productTypes.filter((type) => type !== 'New Kit' && type !== 'Cylinder Refill'),
+    [productTypes]
+  );
 
   // Get provider options from products or settings, including custom providers
   const providerOptions = useMemo(() => {
     const productProperties = settings.productProperties || [];
     const providerProp = productProperties.find(p => p.id === 'prop_provider');
-    const defaultProviders = providerProp?.options && providerProp.options.length > 0 
+    const defaultProviders = providerProp?.options && providerProp.options.length > 0
       ? providerProp.options.filter(p => p !== 'Other')
       : ['Shell', 'Vivo Energy', 'Stabex International', 'Total Energies', 'Oryx Energies', 'Rubis Energy', 'HAS Petroleum'];
-    
+
     // Extract unique providers from existing products (including custom ones)
     const providers = new Set<string>(defaultProviders);
     allProducts.forEach(p => {
@@ -121,33 +110,32 @@ export default function InventoryScreen() {
         providers.add(p.attributes.provider);
       }
     });
-    
+
     // Add custom provider if it exists and is not empty
     if (customProvider && customProvider.trim() !== '') {
       providers.add(customProvider.trim());
     }
-    
+
     const sortedProviders = Array.from(providers).sort();
     return [...sortedProviders, 'Other'];
   }, [settings.productProperties, allProducts, customProvider]);
 
-  // Check if size should be shown (for Full Gas Cylinder, Regulator, and New Kit)
+  // Check if size should be shown (for Full Gas Cylinder, Regulator)
   const isFullGasCylinder = productType === 'Full Gas Cylinder';
   const isRegulator = productType === 'Regulator';
-  const isNewKit = productType === 'New Kit';
   const isGasPlate = productType === 'Gas Plate';
-  const shouldShowSize = isFullGasCylinder || isRegulator || isNewKit;
+  const shouldShowSize = isFullGasCylinder || isRegulator;
   const shouldShowPlateCount = isGasPlate; // Specific field for Gas Plate
 
-  // Check if provider should be shown (for Full Gas Cylinder, Regulator, and New Kit)
-  const shouldShowProvider = isFullGasCylinder || isRegulator || isNewKit;
+  // Check if provider should be shown (for Full Gas Cylinder, Regulator)
+  const shouldShowProvider = isFullGasCylinder || isRegulator;
 
   // Initialize product type and gas size from settings
   useEffect(() => {
     if (filteredProductTypes.length > 0 && !productType) {
       setProductType(filteredProductTypes[0]);
     }
-    // Reset product type if current selection is not in filtered list (e.g., Cylinder Refill when category is Product)
+    // Reset product type if current selection is not in filtered list
     if (productType && !filteredProductTypes.includes(productType)) {
       setProductType(filteredProductTypes[0] || '');
     }
@@ -155,8 +143,8 @@ export default function InventoryScreen() {
       // For Regulator, default to 20mm or 27mm
       if (productType === 'Regulator') {
         setGasSize(gasSizes.find(s => s === '20mm') || gasSizes.find(s => s === '27mm') || gasSizes[0]);
-      } else if (productType === 'Full Gas Cylinder' || productType === 'New Kit') {
-        // For Full Gas Cylinder and New Kit, default to kg sizes
+      } else if (productType === 'Full Gas Cylinder') {
+        // For Full Gas Cylinder, default to kg sizes
         setGasSize(gasSizes.find(s => s !== 'none' && s.includes('kg')) || gasSizes[0]);
       }
     } else if (shouldShowPlateCount && !gasSize) {
@@ -165,7 +153,7 @@ export default function InventoryScreen() {
     } else if (!shouldShowSize && !shouldShowPlateCount) {
       setGasSize('none');
     }
-  }, [filteredProductTypes, gasSizes, productType, gasSize, shouldShowSize, shouldShowPlateCount, category]);
+  }, [filteredProductTypes, gasSizes, productType, gasSize, shouldShowSize, shouldShowPlateCount]);
   const [quantity, setQuantity] = useState('');
   const [price, setPrice] = useState('');
   const [productImageUri, setProductImageUri] = useState<string | undefined>(undefined);
@@ -173,9 +161,13 @@ export default function InventoryScreen() {
   const [isLoadingImage, setIsLoadingImage] = useState(false);
   const [showImagePickerSheet, setShowImagePickerSheet] = useState(false);
 
-  const companyProducts = currentUser?.companyId
-    ? getProductsByCompany(currentUser.companyId)
-    : [];
+  // Products only - exclude services from inventory display
+  const companyProducts = useMemo(() => {
+    if (!currentUser?.companyId) return [];
+    return getProductsByCompany(currentUser.companyId).filter(
+      (p) => p.attributes?.category !== 'Service'
+    );
+  }, [currentUser?.companyId, getProductsByCompany, allProducts]);
 
   // Fetch products from backend on mount
   useEffect(() => {
@@ -314,7 +306,7 @@ export default function InventoryScreen() {
     }
   }, [productImageUri, isUploadingImage]);
 
-  if (isLoadingProducts && !refreshing) {
+  if (isFetchingProducts && !refreshing) {
     return (
       <View className="flex-1" style={{ backgroundColor: colors.background }}>
         <ScrollView
@@ -352,35 +344,9 @@ export default function InventoryScreen() {
   }
 
   const handleAddProduct = async (syncStatus: 'online' | 'offline') => {
-    if (!quantity.trim() || !price.trim()) {
-      Alert.alert('Error', 'Please fill in all fields');
-      return;
-    }
-
-    if (!productType) {
-      Alert.alert('Error', 'Please select a product type');
-      return;
-    }
-
-    if (shouldShowSize && !gasSize) {
-      Alert.alert('Error', `Please select a ${productType === 'Regulator' ? 'regulator size' : 'gas size'}`);
-      return;
-    }
-
-    if (shouldShowPlateCount && !gasSize) {
-      Alert.alert('Error', 'Please select a plate count');
-      return;
-    }
-
-    const qty = parseInt(quantity, 10);
     const prc = parseFloat(price);
 
-    if (isNaN(qty) || qty <= 0) {
-      Alert.alert('Error', 'Please enter a valid quantity');
-      return;
-    }
-
-    if (isNaN(prc) || prc <= 0) {
+    if (!price.trim() || isNaN(prc) || prc <= 0) {
       Alert.alert('Error', 'Please enter a valid price');
       return;
     }
@@ -390,25 +356,44 @@ export default function InventoryScreen() {
       return;
     }
 
-    // Use companyId from user (required for products)
     const companyId = currentUser.companyId;
     if (!companyId) {
       Alert.alert('Error', 'User company information is missing. Please log out and log back in.');
       return;
     }
 
-    // Debug log to see what we're using
-    console.log('Creating product with companyId:', companyId, 'User companyId:', currentUser.companyId);
+    if (!quantity.trim()) {
+      Alert.alert('Error', 'Please fill in all fields');
+      return;
+    }
+    if (!productType) {
+      Alert.alert('Error', 'Please select a product type');
+      return;
+    }
+    if (shouldShowSize && !gasSize) {
+      Alert.alert('Error', `Please select a ${productType === 'Regulator' ? 'regulator size' : 'gas size'}`);
+      return;
+    }
+    if (shouldShowPlateCount && !gasSize) {
+      Alert.alert('Error', 'Please select a plate count');
+      return;
+    }
+
+    const qty = parseInt(quantity, 10);
+    if (isNaN(qty) || qty <= 0) {
+      Alert.alert('Error', 'Please enter a valid quantity');
+      return;
+    }
 
     const attributes: Record<string, any> = {
       type: productType,
-      category: category,
+      category: 'Product',
     };
 
     if (shouldShowSize) {
       attributes.size = gasSize;
     } else if (shouldShowPlateCount) {
-      attributes.size = gasSize; // Store plate count in size attribute for Gas Plate
+      attributes.size = gasSize;
     } else {
       attributes.size = 'none';
     }
@@ -417,19 +402,16 @@ export default function InventoryScreen() {
       attributes.provider = provider;
     } else if (customProvider && customProvider.trim() !== '') {
       attributes.provider = customProvider.trim();
-    } else if (provider === 'Other' && customProvider.trim() === '') {
-      // If Other is selected but no custom provider entered, don't set provider
-      // This allows the field to remain optional
     }
 
     const productData = {
-      name: productType, // Use the product type name directly
+      name: productType,
       price: prc,
       currency: settings.defaultCurrency,
-      companyId: companyId, // Company ID (will be verified by backend middleware)
+      companyId,
       quantity: qty,
       imageUri: productImageUri,
-      attributes: attributes,
+      attributes,
     };
 
     try {
@@ -445,7 +427,6 @@ export default function InventoryScreen() {
             setProvider('');
             setCustomProvider('');
             setShowCustomProviderInput(false);
-            setCategory('Product');
             if (syncStatus === 'offline') {
               router.push('/offline-products');
             } else {
@@ -506,13 +487,44 @@ export default function InventoryScreen() {
       setCustomProvider('');
       setShowCustomProviderInput(false);
     }
-    setCategory(selectedProduct.attributes?.category || 'Product');
 
     setQuantity(selectedProduct.quantity.toString());
     setPrice(selectedProduct.price.toString());
     setProductImageUri(selectedProduct.imageUri);
     setShowActionSheet(false);
     setShowEditForm(true);
+  };
+
+  const handleAddStock = () => {
+    if (!selectedProduct) return;
+    setShowActionSheet(false);
+    setShowAddStockModal(true);
+    setAddStockQuantity('');
+  };
+
+  const handleConfirmAddStock = async () => {
+    const productId = selectedProduct?.id;
+    if (!productId || !selectedProduct) return;
+
+    const qty = parseInt(addStockQuantity.trim(), 10);
+    if (isNaN(qty) || qty <= 0) {
+      Alert.alert('Error', 'Please enter a valid quantity to add');
+      return;
+    }
+
+    const newQuantity = selectedProduct.quantity + qty;
+    try {
+      await updateProduct(productId, { quantity: newQuantity });
+      Alert.alert('Success', `Added ${qty} units. New total: ${newQuantity}`);
+      setShowAddStockModal(false);
+      setSelectedProduct(null);
+      setAddStockQuantity('');
+      if (currentUser?.companyId) {
+        fetchProductsByCompany(currentUser.companyId);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to add stock. Please try again.');
+    }
   };
 
   const handleDelete = () => {
@@ -585,7 +597,7 @@ export default function InventoryScreen() {
       const attributes: Record<string, any> = {
         ...(product?.attributes || {}),
         type: productType,
-        category: category,
+        category: 'Product',
       };
 
       if (shouldShowSize) {
@@ -626,7 +638,6 @@ export default function InventoryScreen() {
       setProvider('');
       setCustomProvider('');
       setShowCustomProviderInput(false);
-      setCategory('Product');
 
       // Refresh products after updating
       if (currentUser?.companyId) {
@@ -759,20 +770,22 @@ export default function InventoryScreen() {
                               <View
                                 className="px-2.5 py-1 rounded-full ml-2"
                                 style={{
-                                  backgroundColor: product.quantity === 0
-                                    ? withOpacity(colors.destructive, 0.15)
-                                    : product.quantity < 10
-                                      ? withOpacity(colors.primary, 0.15)
-                                      : withOpacity(colors.primary, 0.1),
+                                  backgroundColor: product.attributes?.category === 'Service'
+                                    ? withOpacity(colors.primary, 0.1)
+                                    : product.quantity === 0
+                                      ? withOpacity(colors.destructive, 0.15)
+                                      : product.quantity < 10
+                                        ? withOpacity(colors.primary, 0.15)
+                                        : withOpacity(colors.primary, 0.1),
                                 }}>
                                 <View className="flex-row items-center gap-1.5">
                                   <View
                                     className="h-1.5 w-1.5 rounded-full"
                                     style={{
-                                      backgroundColor: product.quantity === 0
-                                        ? colors.destructive
-                                        : product.quantity < 10
-                                          ? colors.primary
+                                      backgroundColor: product.attributes?.category === 'Service'
+                                        ? colors.primary
+                                        : product.quantity === 0
+                                          ? colors.destructive
                                           : colors.primary,
                                     }}
                                   />
@@ -781,15 +794,19 @@ export default function InventoryScreen() {
                                     style={{
                                       fontSize: 11,
                                       fontWeight: '500',
-                                      color: product.quantity === 0
-                                        ? colors.destructive
-                                        : colors.primary,
+                                      color: product.attributes?.category === 'Service'
+                                        ? colors.primary
+                                        : product.quantity === 0
+                                          ? colors.destructive
+                                          : colors.primary,
                                     }}>
-                                    {product.quantity === 0
-                                      ? 'Out of Stock'
-                                      : product.quantity < 10
-                                        ? 'Low Stock'
-                                        : 'In Stock'}
+                                    {product.attributes?.category === 'Service'
+                                      ? 'Service'
+                                      : product.quantity === 0
+                                        ? 'Out of Stock'
+                                        : product.quantity < 10
+                                          ? 'Low Stock'
+                                          : 'In Stock'}
                                   </Text>
                                 </View>
                               </View>
@@ -809,8 +826,8 @@ export default function InventoryScreen() {
                                 </Text>
                               </View>
                             )}
-                            {/* Provider info - For Full Gas Cylinder, Regulator, and New Kit */}
-                            {(product.attributes?.type === 'Full Gas Cylinder' || product.attributes?.type === 'Regulator' || product.attributes?.type === 'New Kit') && product.attributes?.provider && (
+                            {/* Provider info - For Full Gas Cylinder, Regulator, New Kit, and Services */}
+                            {((product.attributes?.type === 'Full Gas Cylinder' || product.attributes?.type === 'Regulator' || product.attributes?.type === 'New Kit' || product.attributes?.category === 'Service') && product.attributes?.provider) && (
                               <View className="flex-row items-center gap-1.5 mb-2">
                                 <View
                                   className="h-1.5 w-1.5 rounded-full"
@@ -823,8 +840,8 @@ export default function InventoryScreen() {
                                 </Text>
                               </View>
                             )}
-                            {/* Size info - For Full Gas Cylinder, Regulator, New Kit, and Gas Plate */}
-                            {(product.attributes?.type === 'Full Gas Cylinder' || product.attributes?.type === 'Regulator' || product.attributes?.type === 'New Kit' || product.attributes?.type === 'Gas Plate') && product.attributes?.size && product.attributes.size !== 'none' && (
+                            {/* Size info - For Full Gas Cylinder, Regulator, New Kit, Gas Plate, and Services */}
+                            {((product.attributes?.type === 'Full Gas Cylinder' || product.attributes?.type === 'Regulator' || product.attributes?.type === 'New Kit' || product.attributes?.type === 'Gas Plate' || product.attributes?.category === 'Service') && product.attributes?.size && product.attributes.size !== 'none') && (
                               <View className="flex-row items-center gap-1.5 mb-2">
                                 <View
                                   className="h-1.5 w-1.5 rounded-full"
@@ -834,11 +851,11 @@ export default function InventoryScreen() {
                                   variant="subhead"
                                   color="tertiary"
                                   style={{ fontSize: 13 }}>
-                                  {product.attributes.type === 'Gas Plate' 
-                                    ? `Plate Count: ${product.attributes.size}` 
+                                  {product.attributes.type === 'Gas Plate'
+                                    ? `Plate Count: ${product.attributes.size}`
                                     : product.attributes.type === 'Regulator'
-                                    ? `Size: ${product.attributes.size}`
-                                    : `Size: ${product.attributes.size}`}
+                                      ? `Size: ${product.attributes.size}`
+                                      : `Size: ${product.attributes.size}`}
                                 </Text>
                               </View>
                             )}
@@ -850,7 +867,7 @@ export default function InventoryScreen() {
                               variant="footnote"
                               color="tertiary"
                               style={{ fontSize: 12, marginBottom: 2 }}>
-                              Quantity
+                              {product.attributes?.category === 'Service' ? 'Size' : 'Quantity'}
                             </Text>
                             <Text
                               variant="body"
@@ -858,7 +875,9 @@ export default function InventoryScreen() {
                                 fontSize: 13,
                                 fontWeight: '500',
                               }}>
-                              {product.quantity}
+                              {product.attributes?.category === 'Service'
+                                ? (product.attributes?.size || '—')
+                                : product.quantity}
                             </Text>
                           </View>
                           <View className="items-end">
@@ -903,7 +922,6 @@ export default function InventoryScreen() {
           setProvider('');
           setCustomProvider('');
           setShowCustomProviderInput(false);
-          setCategory('Product');
         }}
         title="Add Product"
         subtitle="Add a new product to inventory"
@@ -967,34 +985,6 @@ export default function InventoryScreen() {
             </Pressable>
           </View>
 
-          {/* Category Selection */}
-          <View>
-            <Text variant="subhead" className="mb-2">
-              Category
-            </Text>
-            <SegmentedPicker
-              options={[
-                { label: 'Product', value: 'Product' },
-                { label: 'Service', value: 'Service' },
-              ]}
-              selectedValue={category}
-              onValueChange={(value) => {
-                setCategory(value);
-                // Reset product type if current selection doesn't match the new category
-                // Cylinder Refill is only for Service, all others are for Product
-                if (value === 'Service' && productType !== 'Cylinder Refill') {
-                  // Switch to Service category - set to Cylinder Refill if available
-                  const refillAvailable = productTypes.includes('Cylinder Refill');
-                  setProductType(refillAvailable ? 'Cylinder Refill' : '');
-                } else if (value === 'Product' && productType === 'Cylinder Refill') {
-                  // Switch to Product category - reset to first available product type
-                  const productTypesOnly = productTypes.filter(t => t !== 'Cylinder Refill');
-                  setProductType(productTypesOnly[0] || '');
-                }
-              }}
-            />
-          </View>
-
           {filteredProductTypes.length > 0 && (
             <View>
               <Text variant="subhead" className="mb-2">
@@ -1008,8 +998,8 @@ export default function InventoryScreen() {
                 selectedValue={productType || filteredProductTypes[0]}
                 onValueChange={(value) => {
                   setProductType(value as ProductType);
-                  // Reset provider when type changes (only keep if it's Full Gas Cylinder)
-                  if (value !== 'Full Gas Cylinder') {
+                  // Reset provider when type changes (only keep if it's Full Gas Cylinder or Regulator)
+                  if (value !== 'Full Gas Cylinder' && value !== 'Regulator') {
                     setProvider('');
                   }
                   // Reset size when type changes
@@ -1017,7 +1007,7 @@ export default function InventoryScreen() {
                     setGasSize(gasSizes.find(s => s === '20mm') || gasSizes.find(s => s === '27mm') || gasSizes[0]);
                   } else if (value === 'Gas Plate') {
                     setGasSize('2 plates'); // Default to 2 plates for Gas Plate
-                  } else if (value === 'Full Gas Cylinder' || value === 'Cylinder Refill' || value === 'New Kit') {
+                  } else if (value === 'Full Gas Cylinder') {
                     setGasSize(gasSizes.find(s => s !== 'none' && s.includes('kg')) || gasSizes[0]);
                   } else {
                     setGasSize('none');
@@ -1027,7 +1017,7 @@ export default function InventoryScreen() {
             </View>
           )}
 
-          {/* Provider/Brand Selection - For Full Gas Cylinder, Regulator, and New Kit */}
+          {/* Provider/Brand Selection - For Full Gas Cylinder and Regulator */}
           {shouldShowProvider && (
             <View>
               <Text variant="subhead" className="mb-2">
@@ -1107,8 +1097,8 @@ export default function InventoryScreen() {
                       { label: '27mm', value: '27mm' },
                     ];
                   }
-                  // For Full Gas Cylinder and New Kit, only show kg sizes
-                  if (productType === 'Full Gas Cylinder' || productType === 'New Kit') {
+                  // For Full Gas Cylinder, only show kg sizes
+                  if (productType === 'Full Gas Cylinder') {
                     return gasSizes
                       .filter(size => size.includes('kg') || size === 'none')
                       .map((size) => ({
@@ -1142,7 +1132,7 @@ export default function InventoryScreen() {
 
           <View>
             <Text variant="subhead" className="mb-2">
-              Price (UGX)
+              Price ({settings.defaultCurrency || 'UGX'})
             </Text>
             <Input
               value={price}
@@ -1251,34 +1241,6 @@ export default function InventoryScreen() {
             </Pressable>
           </View>
 
-          {/* Category Selection */}
-          <View>
-            <Text variant="subhead" className="mb-2">
-              Category
-            </Text>
-            <SegmentedPicker
-              options={[
-                { label: 'Product', value: 'Product' },
-                { label: 'Service', value: 'Service' },
-              ]}
-              selectedValue={category}
-              onValueChange={(value) => {
-                setCategory(value);
-                // Reset product type if current selection doesn't match the new category
-                // Cylinder Refill is only for Service, all others are for Product
-                if (value === 'Service' && productType !== 'Cylinder Refill') {
-                  // Switch to Service category - set to Cylinder Refill if available
-                  const refillAvailable = productTypes.includes('Cylinder Refill');
-                  setProductType(refillAvailable ? 'Cylinder Refill' : '');
-                } else if (value === 'Product' && productType === 'Cylinder Refill') {
-                  // Switch to Product category - reset to first available product type
-                  const productTypesOnly = productTypes.filter(t => t !== 'Cylinder Refill');
-                  setProductType(productTypesOnly[0] || '');
-                }
-              }}
-            />
-          </View>
-
           {productTypes.length > 0 && (
             <View>
               <Text variant="subhead" className="mb-2">
@@ -1292,8 +1254,8 @@ export default function InventoryScreen() {
                 selectedValue={productType}
                 onValueChange={(value) => {
                   setProductType(value as ProductType);
-                  // Reset provider when type changes (only keep if it's Full Gas Cylinder, Regulator, or New Kit)
-                  if (value !== 'Full Gas Cylinder' && value !== 'Regulator' && value !== 'New Kit') {
+                  // Reset provider when type changes (only keep if it's Full Gas Cylinder or Regulator)
+                  if (value !== 'Full Gas Cylinder' && value !== 'Regulator') {
                     setProvider('');
                     setCustomProvider('');
                     setShowCustomProviderInput(false);
@@ -1303,7 +1265,7 @@ export default function InventoryScreen() {
                     setGasSize(gasSizes.find(s => s === '20mm') || gasSizes.find(s => s === '27mm') || gasSizes[0]);
                   } else if (value === 'Gas Plate') {
                     setGasSize('2 plates'); // Default to 2 plates for Gas Plate
-                  } else if (value === 'Full Gas Cylinder' || value === 'New Kit') {
+                  } else if (value === 'Full Gas Cylinder') {
                     setGasSize(gasSizes.find(s => s !== 'none' && s.includes('kg')) || gasSizes[0]);
                   } else {
                     setGasSize('none');
@@ -1313,7 +1275,7 @@ export default function InventoryScreen() {
             </View>
           )}
 
-          {/* Provider/Brand Selection - For Full Gas Cylinder, Regulator, and New Kit */}
+          {/* Provider/Brand Selection - For Full Gas Cylinder and Regulator */}
           {shouldShowProvider && (
             <View>
               <Text variant="subhead" className="mb-2">
@@ -1378,7 +1340,7 @@ export default function InventoryScreen() {
             </View>
           )}
 
-          {/* Size Selection - For Full Gas Cylinder (kg), Regulator (20mm/27mm), and New Kit (kg) */}
+          {/* Size Selection - For Full Gas Cylinder (kg) and Regulator (20mm/27mm) */}
           {shouldShowSize && gasSizes.length > 0 && (
             <View>
               <Text variant="subhead" className="mb-2">
@@ -1393,8 +1355,8 @@ export default function InventoryScreen() {
                       { label: '27mm', value: '27mm' },
                     ];
                   }
-                  // For Full Gas Cylinder and New Kit, only show kg sizes
-                  if (productType === 'Full Gas Cylinder' || productType === 'New Kit') {
+                  // For Full Gas Cylinder, only show kg sizes
+                  if (productType === 'Full Gas Cylinder') {
                     return gasSizes
                       .filter(size => size.includes('kg') || size === 'none')
                       .map((size) => ({
@@ -1458,17 +1420,62 @@ export default function InventoryScreen() {
         title="Product Actions"
         showIcons={true}
         options={[
+          { label: 'Add Stock', value: 'add_stock', icon: 'plus.circle.fill' },
           { label: 'Edit Product', value: 'edit', icon: 'pencil' },
           { label: 'Delete Product', value: 'delete', icon: 'trash', destructive: true },
         ]}
         onSelect={(value) => {
-          if (value === 'edit') {
+          if (value === 'add_stock') {
+            handleAddStock();
+          } else if (value === 'edit') {
             handleEdit();
           } else if (value === 'delete') {
             handleDelete();
           }
         }}
       />
+
+      {/* Add Stock Modal */}
+      <Modal
+        visible={showAddStockModal}
+        onClose={() => {
+          setShowAddStockModal(false);
+          setSelectedProduct(null);
+          setAddStockQuantity('');
+        }}
+        title="Add Stock"
+        subtitle={selectedProduct ? `Add quantity to ${selectedProduct.name}` : ''}
+        maxHeight={SCREEN_HEIGHT * 0.4}>
+        <View className="gap-4">
+          {selectedProduct && (
+            <View className="rounded-xl px-4 py-3" style={{ backgroundColor: colors.background }}>
+              <Text variant="footnote" color="tertiary" style={{ fontSize: 12, marginBottom: 2 }}>
+                Current stock
+              </Text>
+              <Text variant="body" style={{ fontSize: 16, fontWeight: '600' }}>
+                {selectedProduct.quantity} units
+              </Text>
+            </View>
+          )}
+          <View>
+            <Text variant="subhead" className="mb-2">
+              Quantity to add
+            </Text>
+            <Input
+              value={addStockQuantity}
+              onChangeText={setAddStockQuantity}
+              placeholder="Enter quantity"
+              keyboardType="numeric"
+            />
+          </View>
+          <Button
+            onPress={handleConfirmAddStock}
+            disabled={!addStockQuantity.trim() || isNaN(parseInt(addStockQuantity, 10)) || parseInt(addStockQuantity, 10) <= 0}
+            loading={isLoadingProducts}>
+            <Text>Add Stock</Text>
+          </Button>
+        </View>
+      </Modal>
 
       {/* Image Picker Bottom Sheet */}
       <BottomSheet
@@ -1487,6 +1494,11 @@ export default function InventoryScreen() {
             label: 'Record Sale',
             icon: 'plus.circle.fill',
             onPress: () => router.push('/record-sale'),
+          },
+          {
+            label: 'Record Expense',
+            icon: 'dollarsign.circle.fill',
+            onPress: () => router.push('/record-expense'),
           },
           ...(isSuperAdmin
             ? [

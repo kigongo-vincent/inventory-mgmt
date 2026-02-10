@@ -8,6 +8,7 @@ import { User } from '@/types';
 interface UserState {
   users: User[];
   isLoading: boolean;
+  isFetching: boolean;
   error: string | null;
   addUser: (
     user: Omit<User, 'id' | 'createdAt' | 'syncStatus'>,
@@ -27,6 +28,7 @@ export const useUserStore = create<UserState>()(
     (set, get) => ({
       users: [],
       isLoading: false,
+      isFetching: false,
       error: null,
       addUser: async (userData, syncStatus: 'online' | 'offline' = 'online') => {
         try {
@@ -189,7 +191,7 @@ export const useUserStore = create<UserState>()(
       },
       fetchUsers: async () => {
         try {
-          set({ isLoading: true, error: null });
+          set({ isFetching: true, error: null });
           const users = await userApi.getAllUsers();
           // Mark all fetched users as synced
           const syncedUsers = users.map((u) => ({ ...u, syncStatus: 'synced' as const }));
@@ -197,12 +199,12 @@ export const useUserStore = create<UserState>()(
         } catch (error: any) {
           set({ error: error.message || 'Failed to fetch users' });
         } finally {
-          set({ isLoading: false });
+          set({ isFetching: false });
         }
       },
       fetchUsersByBranch: async (branchId: string) => {
         try {
-          set({ isLoading: true, error: null });
+          set({ isFetching: true, error: null });
           const users = await userApi.getUsersByBranch(branchId);
           // Mark all fetched users as synced
           const syncedUsers = users.map((u) => ({ ...u, syncStatus: 'synced' as const }));
@@ -215,12 +217,12 @@ export const useUserStore = create<UserState>()(
         } catch (error: any) {
           set({ error: error.message || 'Failed to fetch users by branch' });
         } finally {
-          set({ isLoading: false });
+          set({ isFetching: false });
         }
       },
       syncUsers: async (branchIdMap?: Map<string, string>) => {
         try {
-          set({ isLoading: true, error: null });
+          set({ isFetching: true, error: null });
           const { users } = get();
           const offlineUsers = users.filter((u) => u.syncStatus === 'offline');
 
@@ -275,7 +277,7 @@ export const useUserStore = create<UserState>()(
           set({ error: error.message || 'Failed to sync users' });
           throw error; // Re-throw to allow caller to handle
         } finally {
-          set({ isLoading: false });
+          set({ isFetching: false });
         }
       },
     }),

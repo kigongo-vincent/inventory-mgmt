@@ -156,16 +156,34 @@ export default function SettingsScreen() {
               <View className="h-px my-2" style={{ backgroundColor: colors.border, opacity: 0.2 }} />
               <Pressable
                 className="flex-row items-center justify-between py-3"
+                onPress={() =>
+                  router.push({
+                    pathname: '/(tabs)/user-expenses',
+                    params: { userId: currentUser?.id, userName: currentUser?.name },
+                  })
+                }
+                style={({ pressed }) => ({
+                  opacity: pressed ? 0.7 : 1,
+                })}>
+                <View className="flex-row items-center gap-3">
+                  <Icon name="dollarsign.circle.fill" size={24} color={colors.foreground} />
+                  <Text variant="subhead">View Expenses</Text>
+                </View>
+                <Icon name="chevron.right" size={20} color={colors.mutedForeground} />
+              </Pressable>
+              <View className="h-px my-2" style={{ backgroundColor: colors.border, opacity: 0.2 }} />
+              <Pressable
+                className="flex-row items-center justify-between py-3"
                 onPress={() => router.push({ pathname: '/change-password' })}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 style={({ pressed }) => ({
                   opacity: pressed ? 0.7 : 1,
                 })}>
                 <View className="flex-row items-center gap-3">
-                  <Icon 
+                  <Icon
                     materialCommunityIcon={{ name: 'lock' }}
-                    size={24} 
-                    color={colors.foreground} 
+                    size={24}
+                    color={colors.foreground}
                   />
                   <Text variant="subhead">Change Password</Text>
                 </View>

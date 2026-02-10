@@ -248,6 +248,7 @@ export default function RootLayout() {
                       headerShown: false
                     }}
                   />
+                  <Stack.Screen name="record-expense" options={{ headerShown: false }} />
                   <Stack.Screen name="edit-sale" options={{ headerShown: false }} />
                   <Stack.Screen name="edit-user" options={{ headerShown: false }} />
                   <Stack.Screen name="edit-product" options={{ headerShown: false }} />

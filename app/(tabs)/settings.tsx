@@ -583,6 +583,11 @@ export default function SettingsScreen() {
             icon: 'plus.circle.fill',
             onPress: () => router.push('/record-sale'),
           },
+          {
+            label: 'Record Expense',
+            icon: 'dollarsign.circle.fill',
+            onPress: () => router.push('/record-expense'),
+          },
           ...(isSuperAdmin
             ? [
                 {

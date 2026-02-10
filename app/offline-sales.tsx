@@ -20,6 +20,7 @@ export default function OfflineSalesScreen() {
   const deleteSale = useSaleStore((state) => state.deleteSale);
   
   const [showActionSheet, setShowActionSheet] = useState(false);
+  const [showDeleteConfirmSheet, setShowDeleteConfirmSheet] = useState(false);
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
 
   // Get all sales, filter only offline sales, and sort by date (newest first)
@@ -54,31 +55,19 @@ export default function OfflineSalesScreen() {
     }
   };
 
-  const handleDelete = () => {
-    if (selectedSale) {
-      Alert.alert(
-        'Delete Sale',
-        `Are you sure you want to delete this sale for ${selectedSale.productName}?`,
-        [
-          {
-            text: 'Cancel',
-            style: 'cancel',
-          },
-          {
-            text: 'Delete',
-            style: 'destructive',
-            onPress: async () => {
-              try {
-                await deleteSale(selectedSale.id);
-                setShowActionSheet(false);
-                setSelectedSale(null);
-              } catch (error: any) {
-                Alert.alert('Error', error.message || 'Failed to delete sale');
-              }
-            },
-          },
-        ]
-      );
+  const openDeleteConfirm = () => {
+    setShowActionSheet(false);
+    setShowDeleteConfirmSheet(true);
+  };
+
+  const handleDeleteOption = async (revertStock: boolean) => {
+    if (!selectedSale) return;
+    try {
+      await deleteSale(selectedSale.id, { revertStock });
+      setShowDeleteConfirmSheet(false);
+      setSelectedSale(null);
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to delete sale');
     }
   };
 
@@ -313,7 +302,43 @@ export default function OfflineSalesScreen() {
           } else if (value === 'edit') {
             handleEdit();
           } else if (value === 'delete') {
-            handleDelete();
+            openDeleteConfirm();
+          }
+        }}
+      />
+
+      {/* Delete confirmation bottom sheet: Delete only vs Delete and revert stock */}
+      <BottomSheet
+        visible={showDeleteConfirmSheet}
+        onClose={() => {
+          setShowDeleteConfirmSheet(false);
+          setSelectedSale(null);
+        }}
+        title={
+          selectedSale
+            ? `Delete sale of ${selectedSale.quantity} × ${selectedSale.productName}?`
+            : 'Delete sale?'
+        }
+        showIcons={true}
+        options={[
+          {
+            label: 'Delete only',
+            value: 'delete_only',
+            icon: 'trash',
+            destructive: true,
+          },
+          {
+            label: 'Delete and revert stock',
+            value: 'delete_revert',
+            icon: 'arrow.uturn.backward',
+            destructive: true,
+          },
+        ]}
+        onSelect={(value) => {
+          if (value === 'delete_only') {
+            handleDeleteOption(false);
+          } else if (value === 'delete_revert') {
+            handleDeleteOption(true);
           }
         }}
       />

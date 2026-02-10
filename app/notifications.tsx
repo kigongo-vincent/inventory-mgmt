@@ -7,6 +7,7 @@ import { StatusBar } from 'expo-status-bar';
 import { Button } from '@/components/nativewindui/Button';
 import { Icon } from '@/components/nativewindui/Icon';
 import { Text } from '@/components/nativewindui/Text';
+import { parseDate } from '@/lib/dateUtils';
 import { useColorScheme } from '@/lib/useColorScheme';
 import { useNotificationStore } from '@/store/notificationStore';
 import { Notification, NotificationType } from '@/types';
@@ -43,24 +44,32 @@ const getNotificationColor = (type: NotificationType, colors: any) => {
 };
 
 const formatTimeAgo = (dateString: string) => {
-  const date = new Date(dateString);
+  if (!dateString) return '';
+  const date = parseDate(dateString);
   const now = new Date();
   const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
+  if (diffInSeconds < 0) {
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  }
   if (diffInSeconds < 60) {
     return 'Just now';
-  } else if (diffInSeconds < 3600) {
+  }
+  if (diffInSeconds < 3600) {
     const minutes = Math.floor(diffInSeconds / 60);
     return `${minutes}m ago`;
-  } else if (diffInSeconds < 86400) {
+  }
+  if (diffInSeconds < 86400) {
     const hours = Math.floor(diffInSeconds / 3600);
     return `${hours}h ago`;
-  } else if (diffInSeconds < 604800) {
+  }
+  if (diffInSeconds < 604800) {
     const days = Math.floor(diffInSeconds / 86400);
     return `${days}d ago`;
-  } else {
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   }
+  return date.getFullYear() !== now.getFullYear()
+    ? date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    : date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 };
 
 export default function NotificationsScreen() {

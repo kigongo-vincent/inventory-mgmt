@@ -7,6 +7,7 @@ import { Icon } from '@/components/nativewindui/Icon';
 import { TabHeader } from '@/components/TabHeader';
 import { useAuthStore } from '@/store/authStore';
 import { useBranchStore } from '@/store/branchStore';
+import { useExpenseStore } from '@/store/expenseStore';
 import { useNotificationStore } from '@/store/notificationStore';
 import { useProductStore } from '@/store/productStore';
 import { useSaleStore } from '@/store/saleStore';
@@ -20,6 +21,7 @@ export default function TabsLayout() {
   const fetchProducts = useProductStore((state) => state.fetchProducts);
   const fetchSales = useSaleStore((state) => state.fetchSales);
   const fetchBranches = useBranchStore((state) => state.fetchBranches);
+  const fetchExpenses = useExpenseStore((state) => state.fetchExpenses);
   const { colors } = useColorScheme();
   const insets = useSafeAreaInsets();
 
@@ -36,6 +38,7 @@ export default function TabsLayout() {
             fetchProducts(),
             fetchSales(),
             fetchBranches(),
+            fetchExpenses(),
           ]);
         } catch (error) {
           console.error('Error loading data from backend:', error);
@@ -139,6 +142,12 @@ export default function TabsLayout() {
         />
         <Tabs.Screen
           name="user-sales"
+          options={{
+            href: null, // Hide from tab bar
+          }}
+        />
+        <Tabs.Screen
+          name="user-expenses"
           options={{
             href: null, // Hide from tab bar
           }}
