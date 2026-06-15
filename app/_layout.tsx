@@ -28,6 +28,7 @@ import { router } from 'expo-router';
 import { requestNotificationPermissions } from '@/lib/services/notificationService';
 import { sseClient } from '@/lib/services/sseClient';
 import * as Notifications from 'expo-notifications';
+import * as Updates from 'expo-updates';
 import { testConnection } from '@/lib/api/testConnection';
 import { ConnectionFallbackScreen } from '@/components/ConnectionFallbackScreen';
 
@@ -88,6 +89,28 @@ export default function RootLayout() {
     };
 
     checkConnection();
+  }, []);
+
+  // Expo Updates: check for OTA update on app load (no-op in Expo Go / when updates disabled)
+  useEffect(() => {
+    async function checkForUpdates() {
+      try {
+        if (!Updates.isEmbeddedLaunch) return; // Skip if not a standalone build
+        const update = await Updates.checkForUpdateAsync();
+        if (__DEV__) {
+          console.log('🔄 Expo Updates check:', update.isAvailable ? 'update available' : 'no update');
+        }
+        if (update.isAvailable) {
+          await Updates.fetchUpdateAsync();
+          await Updates.reloadAsync();
+        }
+      } catch (e) {
+        if (__DEV__) {
+          console.log('🔄 Expo Updates check skipped or failed:', (e as Error).message);
+        }
+      }
+    }
+    checkForUpdates();
   }, []);
 
   // Retry connection handler

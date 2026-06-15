@@ -11,9 +11,9 @@ const getApiBaseUrl = (): string => {
   // This is the centralized location - always comes from .env.dev
   const apiUrl =
     Constants.expoConfig?.extra?.apiBaseUrl ||
-    (__DEV__ ? 'http://localhost:8080/api/v1' : 'https://your-api-domain.com/api/v1');
+    (__DEV__ ? 'http://localhost:8080/api/v1' : 'https://inventory-api.bvrdesign.africa/api/v1');
 
-  // Log the API URL being used (only in development)
+  // Log the API URL (only in development)
   if (__DEV__) {
     const source = Constants.expoConfig?.extra?.apiBaseUrl
       ? '.env.dev (via app.config.js)'
