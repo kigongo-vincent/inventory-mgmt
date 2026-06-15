@@ -205,12 +205,13 @@ class SSEClient {
     this.isConnecting = false;
     this.isConnected = false;
     if (this.xhr) {
+      const xhrToAbort = this.xhr;
+      this.xhr = null;
       try {
-        this.xhr.abort();
+        xhrToAbort.abort();
       } catch {
         // Ignore abort errors
       }
-      this.xhr = null;
     }
     console.error('Error connecting to SSE:', error);
     this.scheduleReconnect();
@@ -269,12 +270,13 @@ class SSEClient {
 
   disconnect(): void {
     if (this.xhr) {
+      const xhrToAbort = this.xhr;
+      this.xhr = null;
       try {
-        this.xhr.abort();
+        xhrToAbort.abort();
       } catch {
         // Ignore abort errors
       }
-      this.xhr = null;
     }
     this.isConnected = false;
     this.isConnecting = false;
