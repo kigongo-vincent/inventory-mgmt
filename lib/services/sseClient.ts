@@ -77,8 +77,7 @@ function validateEventPayload(obj: unknown): { valid: true; event: Record<string
 }
 
 class SSEClient {
-  private eventSource: EventSource | null = null;
-  private abortController: AbortController | null = null;
+  private xhr: XMLHttpRequest | null = null;
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
   private reconnectDelay = 3000;
@@ -86,7 +85,7 @@ class SSEClient {
   private isConnecting = false;
 
   connect(): void {
-    if (this.isConnected && this.eventSource) {
+    if (this.isConnected && this.xhr) {
       return;
     }
     if (this.isConnecting) {
@@ -103,102 +102,118 @@ class SSEClient {
         return;
       }
 
-      this.disconnect(); // Abort any existing fetch and clear state
+      this.disconnect(); // Abort any existing connection and clear state
 
       this.isConnecting = true;
-      const controller = new AbortController();
-      this.abortController = controller;
-
       const url = `${API_BASE_URL}/sales/events`;
 
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: 'text/event-stream',
-          'Cache-Control': 'no-cache',
-        },
-        signal: controller.signal,
-      });
+      const xhr = new XMLHttpRequest();
+      this.xhr = xhr;
 
-      if (!response.ok) {
-        throw new Error(`SSE connection failed: ${response.status}`);
-      }
+      xhr.open('GET', url);
+      xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+      xhr.setRequestHeader('Accept', 'text/event-stream');
+      xhr.setRequestHeader('Cache-Control', 'no-cache');
 
-      this.isConnected = true;
-      this.isConnecting = false;
-      this.reconnectAttempts = 0;
-
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
-
-      if (!reader) {
-        throw new Error('Response body is not readable');
-      }
-
+      let processedLength = 0;
       let buffer = '';
 
-      const readChunk = async () => {
-        try {
-          while (true) {
-            const { done, value } = await reader.read();
+      xhr.onreadystatechange = () => {
+        // Avoid handling state changes if this XHR is no longer the active connection
+        if (this.xhr !== xhr) {
+          return;
+        }
 
-            if (done) {
-              console.log('SSE stream ended');
-              this.isConnected = false;
-              this.scheduleReconnect();
-              break;
+        // Only verify status once headers are received
+        if (xhr.readyState >= 2) {
+          if (xhr.status < 200 || xhr.status >= 300) {
+            this.handleConnectionError(new Error(`SSE connection failed with status: ${xhr.status}`));
+            return;
+          }
+        }
+
+        if (xhr.readyState === 3 || xhr.readyState === 4) {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            if (this.isConnecting) {
+              this.isConnected = true;
+              this.isConnecting = false;
+              this.reconnectAttempts = 0;
             }
 
-            buffer += decoder.decode(value, { stream: true });
-            const lines = buffer.split('\n');
-            buffer = lines.pop() || '';
+            const responseText = xhr.responseText || '';
+            if (responseText.length > processedLength) {
+              const newData = responseText.slice(processedLength);
+              processedLength = responseText.length;
 
-            for (const line of lines) {
-              const lineResult = validateSSELine(line);
-              if (!lineResult.valid) {
-                if (line.trim()) {
-                  console.warn('SSE validation (line):', lineResult.reason);
-                }
-                continue;
-              }
-              try {
-                const parsed = JSON.parse(lineResult.data) as unknown;
-                const eventResult = validateEventPayload(parsed);
-                if (!eventResult.valid) {
-                  console.warn('SSE validation (payload):', eventResult.reason);
+              buffer += newData;
+              const lines = buffer.split('\n');
+              buffer = lines.pop() || '';
+
+              for (const line of lines) {
+                const lineResult = validateSSELine(line);
+                if (!lineResult.valid) {
+                  if (line.trim()) {
+                    console.warn('SSE validation (line):', lineResult.reason);
+                  }
                   continue;
                 }
-                this.handleMessage(lineResult.data, eventResult.event);
-              } catch (e) {
-                console.warn('SSE JSON parse error:', e);
+                try {
+                  const parsed = JSON.parse(lineResult.data) as unknown;
+                  const eventResult = validateEventPayload(parsed);
+                  if (!eventResult.valid) {
+                    console.warn('SSE validation (payload):', eventResult.reason);
+                    continue;
+                  }
+                  this.handleMessage(lineResult.data, eventResult.event);
+                } catch (e) {
+                  console.warn('SSE JSON parse error:', e);
+                }
               }
             }
           }
-        } catch (error: unknown) {
-          if (error instanceof Error && error.name === 'AbortError') {
+        }
+
+        if (xhr.readyState === 4) {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            console.log('SSE stream ended');
             this.isConnected = false;
-            this.isConnecting = false;
-            return; // User disconnect, do not reconnect
+            this.xhr = null;
+            this.scheduleReconnect();
+          } else {
+            this.handleConnectionError(new Error(`SSE stream ended with status: ${xhr.status}`));
           }
-          console.error('Error reading SSE stream:', error);
-          this.isConnected = false;
-          this.scheduleReconnect();
-        } finally {
-          this.isConnecting = false;
         }
       };
 
-      readChunk();
+      xhr.onerror = (err) => {
+        if (this.xhr !== xhr) {
+          return;
+        }
+        this.handleConnectionError(new Error('Network error'));
+      };
+
+      xhr.send();
     } catch (error: unknown) {
-      this.isConnecting = false;
-      if (error instanceof Error && error.name === 'AbortError') {
-        return;
-      }
-      console.error('Error connecting to SSE:', error);
-      this.isConnected = false;
-      this.scheduleReconnect();
+      this.handleConnectionError(error);
     }
+  }
+
+  private handleConnectionError(error: unknown): void {
+    if (!this.isConnecting && !this.isConnected) {
+      return;
+    }
+    this.isConnecting = false;
+    this.isConnected = false;
+    if (this.xhr) {
+      try {
+        this.xhr.abort();
+      } catch {
+        // Ignore abort errors
+      }
+      this.xhr = null;
+    }
+    console.error('Error connecting to SSE:', error);
+    this.scheduleReconnect();
   }
 
   private handleMessage(rawData: string, event: Record<string, unknown>): void {
@@ -253,13 +268,13 @@ class SSEClient {
   }
 
   disconnect(): void {
-    if (this.abortController) {
-      this.abortController.abort();
-      this.abortController = null;
-    }
-    if (this.eventSource) {
-      this.eventSource.close();
-      this.eventSource = null;
+    if (this.xhr) {
+      try {
+        this.xhr.abort();
+      } catch {
+        // Ignore abort errors
+      }
+      this.xhr = null;
     }
     this.isConnected = false;
     this.isConnecting = false;

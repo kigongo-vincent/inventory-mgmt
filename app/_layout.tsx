@@ -213,15 +213,15 @@ export default function RootLayout() {
   }
 
   // Show fallback screen if connection test failed
-  if (connectionStatus.tested && !connectionStatus.success) {
-    return (
-      <ConnectionFallbackScreen
-        errorMessage={connectionStatus.errorMessage}
-        onRetry={handleRetryConnection}
-        isRetrying={isRetrying}
-      />
-    );
-  }
+  // if (connectionStatus.tested && !connectionStatus.success) {
+  //   return (
+  //     <ConnectionFallbackScreen
+  //       errorMessage={connectionStatus.errorMessage}
+  //       onRetry={handleRetryConnection}
+  //       isRetrying={isRetrying}
+  //     />
+  //   );
+  // }
 
   return (
     <>

@@ -8,6 +8,8 @@ import { Icon } from '@/components/nativewindui/Icon';
 import { Text } from '@/components/nativewindui/Text';
 import { useColorScheme } from '@/lib/useColorScheme';
 import { API_BASE_URL } from '@/lib/api/config';
+import { useAuthStore } from '@/store/authStore';
+import { Redirect } from 'expo-router';
 
 interface ConnectionFallbackScreenProps {
   errorMessage?: string;
@@ -21,6 +23,7 @@ export function ConnectionFallbackScreen({
   isRetrying = false,
 }: ConnectionFallbackScreenProps) {
   const { colors, colorScheme } = useColorScheme();
+  const { isAuthenticated } = useAuthStore()
 
   return (
     <>

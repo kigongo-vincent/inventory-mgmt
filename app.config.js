@@ -28,5 +28,5 @@ module.exports = ({ config }) => ({
     ...config.updates,
   },
   // Required for EAS Update: ties OTA updates to app version (or use policy: 'sdkVersion').
-  runtimeVersion: config.runtimeVersion ?? { policy: '1.0.0"' },
+  runtimeVersion: config.runtimeVersion ?? { policy: 'sdkVersion' },
 });

@@ -1,6 +1,6 @@
 import { Redirect, useSegments } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { View } from 'react-native';
+import { Image, View } from 'react-native';
 
 import { ActivityIndicator } from '@/components/nativewindui/ActivityIndicator';
 import { getAuthToken } from '@/lib/api/config';
@@ -62,13 +62,14 @@ export default function Index() {
   if (!hasHydrated || !isReady) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }}>
-        <ActivityIndicator size="large" />
+        {/* <ActivityIndicator size="large" />  */}
+        <Image source={require("@/assets/icon.jpg")} style={{ width: 200, height: 200 }} />
       </View>
     );
   }
 
   const inAuthGroup = segments[0] === '(auth)';
-  const inTabsGroup = segments[0] === '(tabs)';
+  // const inTabsGroup = segments[0] === '(tabs)';
 
   // Redirect to login if not authenticated
   if (!isAuthenticated && !inAuthGroup) {
@@ -81,7 +82,7 @@ export default function Index() {
   }
 
   // Redirect to dashboard if authenticated and no specific route
-  if (isAuthenticated && segments.length === 0) {
+  if (isAuthenticated) {
     return <Redirect href="/(tabs)/dashboard" />;
   }
 
