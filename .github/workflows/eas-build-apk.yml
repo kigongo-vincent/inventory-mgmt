@@ -1,0 +1,68 @@
+name: EAS Build APK
+
+on:
+  push:
+    branches:
+      - build-apk
+  workflow_dispatch:
+    inputs:
+      message:
+        description: 'Build Message'
+        required: false
+        type: string
+        default: ''
+
+jobs:
+  build:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🏗 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: ${{ hashFiles('pnpm-lock.yaml') != '' && 'pnpm' || hashFiles('yarn.lock') != '' && 'yarn' || 'npm' }}
+
+      - name: 🚀 Setup Expo & EAS
+        uses: expo/expo-github-action@v8
+        with:
+          expo-version: latest
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: 📦 Install dependencies
+        run: |
+          if [ -f "pnpm-lock.yaml" ]; then
+            corepack enable
+            pnpm install --frozen-lockfile
+          elif [ -f "yarn.lock" ]; then
+            yarn install --frozen-lockfile
+          elif [ -f "bun.lockb" ]; then
+            npm install -g bun
+            bun install --frozen-lockfile
+          else
+            npm ci
+          fi
+
+      - name: 🔨 Build APK
+        run: |
+          if [ -f "scripts/build-apk.sh" ]; then
+            chmod +x scripts/build-apk.sh
+            ./scripts/build-apk.sh --non-interactive --no-wait
+          else
+            npx eas-cli build --platform android --profile apk --clear-cache --non-interactive --no-wait
+          fi
+
+      - name: 📝 Build Summary
+        if: always()
+        run: |
+          echo "## 📦 APK Build Triggered" >> $GITHUB_STEP_SUMMARY
+          echo "- **Platform:** Android" >> $GITHUB_STEP_SUMMARY
+          echo "- **Profile:** apk" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Triggered by:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Monitor at [expo.dev](https://expo.dev)" >> $GITHUB_STEP_SUMMARY
