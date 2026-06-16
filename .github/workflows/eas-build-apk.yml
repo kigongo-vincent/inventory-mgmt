@@ -1,4 +1,3 @@
-```yaml
 name: EAS Build APK
 
 on:
@@ -61,4 +60,3 @@ jobs:
           echo "- **Triggered by:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "Monitor at [expo.dev](https://expo.dev)" >> $GITHUB_STEP_SUMMARY
-```
