@@ -1,3 +1,4 @@
+```yaml
 name: EAS Build APK
 
 on:
@@ -48,13 +49,7 @@ jobs:
           fi
 
       - name: 🔨 Build APK
-        run: |
-          if [ -f "scripts/build-apk.sh" ]; then
-            chmod +x scripts/build-apk.sh
-            ./scripts/build-apk.sh --non-interactive --no-wait
-          else
-            npx eas-cli build --platform android --profile apk --clear-cache --non-interactive --no-wait
-          fi
+        run: npx eas-cli build --platform android --profile apk --clear-cache --non-interactive --no-wait
 
       - name: 📝 Build Summary
         if: always()
@@ -66,3 +61,4 @@ jobs:
           echo "- **Triggered by:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "Monitor at [expo.dev](https://expo.dev)" >> $GITHUB_STEP_SUMMARY
+```
