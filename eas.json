@@ -7,46 +7,45 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
+      "channel": "development",
       "env": {
         "API_BASE_URL": "https://inventory-api.bvrdesign.africa/api/v1",
-        "CLOUDINARY_CLOUD_NAME": "your-cloud-name",
-        "CLOUDINARY_API_KEY": "your-api-key",
-        "CLOUDINARY_API_SECRET": "your-api-secret",
-        "CLOUDINARY_UPLOAD_PRESET": "your-upload-preset",
         "NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME": "dauv815j5",
         "NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET": "inventory-mgmt-preset"
-      },
-      "channel": "development"
+      }
     },
     "preview": {
       "distribution": "internal",
+      "channel": "preview",
       "env": {
         "API_BASE_URL": "https://inventory-api.bvrdesign.africa/api/v1",
-        "CLOUDINARY_CLOUD_NAME": "your-cloud-name",
-        "CLOUDINARY_API_KEY": "your-api-key",
-        "CLOUDINARY_API_SECRET": "your-api-secret",
-        "CLOUDINARY_UPLOAD_PRESET": "your-upload-preset",
         "NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME": "dauv815j5",
         "NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET": "inventory-mgmt-preset"
-      },
-      "channel": "preview"
+      }
     },
     "production": {
       "autoIncrement": true,
-      "releaseChannel": "production",
+      "channel": "production",
+      "android": {
+        "buildType": "app-bundle"
+      },
+      "env": {
+        "API_BASE_URL": "https://inventory-api.bvrdesign.africa/api/v1",
+        "NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME": "dauv815j5",
+        "NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET": "inventory-mgmt-preset"
+      }
+    },
+    "apk": {
+      "distribution": "internal",
+      "channel": "production",
       "android": {
         "buildType": "apk"
       },
       "env": {
         "API_BASE_URL": "https://inventory-api.bvrdesign.africa/api/v1",
-        "CLOUDINARY_CLOUD_NAME": "your-cloud-name",
-        "CLOUDINARY_API_KEY": "your-api-key",
-        "CLOUDINARY_API_SECRET": "your-api-secret",
-        "CLOUDINARY_UPLOAD_PRESET": "your-upload-preset",
         "NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME": "dauv815j5",
         "NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET": "inventory-mgmt-preset"
-      },
-      "channel": "production"
+      }
     }
   },
   "submit": {
