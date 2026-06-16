@@ -720,9 +720,9 @@ export default function RecordSaleScreen() {
                         <Text style={{ fontSize: 13.5, color: colors.foreground, fontWeight: '400', marginTop: 4 }}>Product</Text>
                       </View>
                     </Pressable>
-                    <Pressable onPress={() => { }} style={({ pressed }) => ({ opacity: pressed ? 0.95 : 1, flex: 1 })}>
+                    <Pressable onPress={() => setSaleMode('service')} style={({ pressed }) => ({ opacity: pressed ? 0.95 : 1, flex: 1 })}>
                       <View className="rounded-xl px-4 py-3 items-center" style={{ backgroundColor: colors.primary, borderWidth: 0.5, borderColor: colors.primary }}>
-                        <MaterialCommunityIcons name="gas-cylinder" size={24} color={colors.background} />
+                        <MaterialCommunityIcons name="gas-cylinder" size={24} color={"#fff"} />
                         <Text style={{ fontSize: 13.5, color: colors.primaryForeground, fontWeight: '600', marginTop: 4 }}>Service</Text>
                       </View>
                     </Pressable>
@@ -1094,7 +1094,7 @@ export default function RecordSaleScreen() {
                           borderWidth: 0.5,
                           borderColor: withOpacity(colors.border, 0.2),
                         }}>
-                        <Icon name="wrench.and.screwdriver.fill" size={24} color={saleMode === 'service' ? colors.primaryForeground : colors.primary} />
+                        <MaterialCommunityIcons name="gas-cylinder" size={24} color={colors?.primary} />
                         <Text style={{ fontSize: 13.5, color: saleMode === 'service' ? colors.primaryForeground : colors.foreground, fontWeight: saleMode === 'service' ? '600' : '400', marginTop: 4 }}>
                           Service
                         </Text>
@@ -1902,7 +1902,7 @@ export default function RecordSaleScreen() {
                       style={{
                         backgroundColor: colors.card,
                       }}>
-                      <Icon name="shippingbox" size={32} color={colors.primary} style={{ opacity: 0.5 }} />
+                      <Icon name="cube.fill" size={32} color={colors.primary} style={{ opacity: 0.5 }} />
                     </View>
                     <Text variant="subhead" color="tertiary" style={{ fontSize: 13.5 }}>
                       No products available for this selection

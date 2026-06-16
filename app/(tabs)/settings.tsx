@@ -28,12 +28,12 @@ export default function SettingsScreen() {
   const sales = useSaleStore((state) => state.sales);
   const users = useUserStore((state) => state.users);
   const branches = useBranchStore((state) => state.branches);
-  
+
   const syncBranches = useBranchStore((state) => state.syncBranches);
   const syncUsers = useUserStore((state) => state.syncUsers);
   const syncProducts = useProductStore((state) => state.syncProducts);
   const syncSales = useSaleStore((state) => state.syncSales);
-  
+
   const [storageSize, setStorageSize] = useState<string>('0 KB');
   const [isOffline, setIsOffline] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -56,14 +56,14 @@ export default function SettingsScreen() {
     try {
       const keys = await AsyncStorage.getAllKeys();
       let totalSize = 0;
-      
+
       for (const key of keys) {
         const value = await AsyncStorage.getItem(key);
         if (value) {
           totalSize += value.length;
         }
       }
-      
+
       // Convert to readable format
       if (totalSize < 1024) {
         setStorageSize(`${totalSize} B`);
@@ -89,9 +89,9 @@ export default function SettingsScreen() {
     const offlineUsers = users.filter((u) => u.syncStatus === 'offline');
     const offlineProducts = products.filter((p) => p.syncStatus === 'offline');
     const offlineSales = sales.filter((s) => s.syncStatus === 'offline');
-    
+
     const totalOffline = offlineBranches.length + offlineUsers.length + offlineProducts.length + offlineSales.length;
-    
+
     if (totalOffline === 0) {
       Alert.alert('No Data to Sync', 'All data is already synced to the cloud.');
       return;
@@ -109,14 +109,14 @@ export default function SettingsScreen() {
 
   const handleConfirmSync = async () => {
     if (!syncDetails) return;
-    
+
     // Check if user is authenticated
     if (!currentUser || !isAuthenticated) {
       Alert.alert('Authentication Required', 'Please log in to sync data to the cloud.');
       setShowSyncSheet(false);
       return;
     }
-    
+
     // Verify token is still available before syncing
     const token = await getAuthToken();
     if (!token) {
@@ -124,11 +124,11 @@ export default function SettingsScreen() {
       setShowSyncSheet(false);
       return;
     }
-    
+
     setShowSyncSheet(false);
     setIsSyncing(true);
     const errors: string[] = [];
-    
+
     try {
       // Step 1: Sync branches first (no dependencies)
       const offlineBranches = branches.filter((b) => b.syncStatus === 'offline');
@@ -208,24 +208,24 @@ export default function SettingsScreen() {
       // Show results and create notification
       if (errors.length === 0) {
         Alert.alert('Success', 'All data has been synced to the cloud successfully.');
-        
+
         // Create system notification for successful sync
         if (currentUser?.id) {
           try {
             const { notificationApi } = await import('@/lib/api/notificationApi');
-            const totalSynced = 
+            const totalSynced =
               (offlineBranches.length > 0 ? 1 : 0) +
               (offlineUsers.length > 0 ? 1 : 0) +
               (offlineProducts.length > 0 ? 1 : 0) +
               (offlineSales.length > 0 ? 1 : 0);
-            
+
             await notificationApi.createNotification({
               userId: typeof currentUser.id === 'string' ? parseInt(currentUser.id, 10) : currentUser.id,
               type: 'system',
               title: 'Cloud Sync Completed',
               message: `Successfully synced ${totalSynced} item(s) to the cloud. All data is now up to date.`,
             });
-            
+
             // Refresh notifications
             const { useNotificationStore } = await import('@/store/notificationStore');
             useNotificationStore.getState().fetchNotifications();
@@ -239,7 +239,7 @@ export default function SettingsScreen() {
           `Sync completed with ${errors.length} error(s):\n\n${errors.slice(0, 3).join('\n')}${errors.length > 3 ? `\n\n...and ${errors.length - 3} more` : ''}`,
           [{ text: 'OK' }]
         );
-        
+
         // Create system notification for partial sync
         if (currentUser?.id) {
           try {
@@ -250,7 +250,7 @@ export default function SettingsScreen() {
               title: 'Cloud Sync Completed with Errors',
               message: `Sync completed with ${errors.length} error(s). Some data may not have been synced.`,
             });
-            
+
             // Refresh notifications
             const { useNotificationStore } = await import('@/store/notificationStore');
             useNotificationStore.getState().fetchNotifications();
@@ -338,10 +338,10 @@ export default function SettingsScreen() {
               <View
                 className="h-14 w-14 items-center justify-center rounded-xl"
                 style={{ backgroundColor: colors.background }}>
-                <Icon 
-                  name={isOffline ? "externaldrive.fill" : "wifi"} 
-                  size={13.5 * 2} 
-                  color={colors.primary} 
+                <Icon
+                  name={isOffline ? "externaldrive.fill" : "wifi"}
+                  size={13.5 * 2}
+                  color={colors.primary}
                 />
               </View>
               <View className="flex-1">
@@ -349,14 +349,14 @@ export default function SettingsScreen() {
                   {isOffline ? 'Offline Mode' : 'Online Mode'}
                 </Text>
                 <Text variant="footnote" color="tertiary">
-                  {isOffline 
-                    ? 'All data is stored locally' 
+                  {isOffline
+                    ? 'All data is stored locally'
                     : 'Connected to server'}
                 </Text>
               </View>
               <View
                 className="h-3 w-3 rounded-full"
-                style={{ 
+                style={{
                   backgroundColor: isOffline ? '#FF6B6B' : '#4CAF50',
                 }}
               />
@@ -372,7 +372,7 @@ export default function SettingsScreen() {
             <Text variant="callout" className="mb-4" style={{ fontWeight: '500' }}>
               Sync to Cloud
             </Text>
-            
+
             <View className="gap-3">
               <Button
                 onPress={handleSyncToCloud}
@@ -385,7 +385,7 @@ export default function SettingsScreen() {
                   {isSyncing ? 'Syncing...' : 'Sync All to Cloud'}
                 </Text>
               </Button>
-              
+
               <Text variant="footnote" color="tertiary" style={{ fontSize: 12, textAlign: 'center', marginTop: 4 }}>
                 Syncs all offline data in the correct order: Branches → Users → Products → Sales
               </Text>
@@ -401,7 +401,7 @@ export default function SettingsScreen() {
             <Text variant="callout" className="mb-4" style={{ fontWeight: '500' }}>
               Offline Data
             </Text>
-            
+
             <View className="gap-3">
               <Pressable
                 onPress={() => router.push('/offline-products')}
@@ -410,7 +410,7 @@ export default function SettingsScreen() {
                 })}>
                 <View className="flex-row items-center justify-between py-2">
                   <View className="flex-row items-center gap-3">
-                    <Icon name="shippingbox.fill" size={20} color={colors.primary} />
+                    <Icon name="cube.fill" size={20} color={colors.primary} />
                     <Text variant="subhead">Products</Text>
                   </View>
                   <View className="flex-row items-center gap-2">
@@ -421,9 +421,9 @@ export default function SettingsScreen() {
                   </View>
                 </View>
               </Pressable>
-              
+
               <View className="h-px" style={{ backgroundColor: colors.border, opacity: 0.2 }} />
-              
+
               <Pressable
                 onPress={() => router.push('/offline-sales')}
                 style={({ pressed }) => ({
@@ -442,9 +442,9 @@ export default function SettingsScreen() {
                   </View>
                 </View>
               </Pressable>
-              
+
               <View className="h-px" style={{ backgroundColor: colors.border, opacity: 0.2 }} />
-              
+
               <Pressable
                 onPress={() => router.push('/offline-users')}
                 style={({ pressed }) => ({
@@ -463,9 +463,9 @@ export default function SettingsScreen() {
                   </View>
                 </View>
               </Pressable>
-              
+
               <View className="h-px" style={{ backgroundColor: colors.border, opacity: 0.2 }} />
-              
+
               <Pressable
                 onPress={() => router.push('/offline-branches')}
                 style={({ pressed }) => ({
@@ -484,9 +484,9 @@ export default function SettingsScreen() {
                   </View>
                 </View>
               </Pressable>
-              
+
               <View className="h-px" style={{ backgroundColor: colors.border, opacity: 0.2 }} />
-              
+
               <View className="flex-row items-center justify-between py-2">
                 <View className="flex-row items-center gap-3">
                   <Icon name="externaldrive.fill" size={20} color={colors.primary} />
@@ -508,7 +508,7 @@ export default function SettingsScreen() {
             <Text variant="callout" className="mb-4" style={{ fontWeight: '500' }}>
               Storage Actions
             </Text>
-            
+
             <Pressable
               className="flex-row items-center justify-between py-3"
               onPress={handleClearCache}
@@ -535,7 +535,7 @@ export default function SettingsScreen() {
           setShowSyncSheet(false);
           setSyncDetails(null);
         }}
-        title={syncDetails 
+        title={syncDetails
           ? `Sync ${syncDetails.branches + syncDetails.users + syncDetails.products + syncDetails.sales} items to cloud?\n\n• ${syncDetails.branches} Branches\n• ${syncDetails.users} Users\n• ${syncDetails.products} Products\n• ${syncDetails.sales} Sales`
           : 'Sync to Cloud'}
         showIcons={true}
@@ -590,12 +590,12 @@ export default function SettingsScreen() {
           },
           ...(isSuperAdmin
             ? [
-                {
-                  label: 'Add Product',
-                  icon: 'cube.box.fill',
-                  onPress: () => router.push('/add-product'),
-                },
-              ]
+              {
+                label: 'Add Product',
+                icon: 'cube.box.fill',
+                onPress: () => router.push('/add-product'),
+              },
+            ]
             : []),
         ].filter(Boolean)}
       />

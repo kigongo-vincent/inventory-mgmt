@@ -61,98 +61,98 @@ export default function TabsLayout() {
 
   return (
     // <SafeAreaView edges={["top", "left", "right"]}>
-      <Tabs
-        screenOptions={{
-          header: headerComponent,
-          tabBarActiveTintColor: colors.primary,
-          tabBarInactiveTintColor: colors.mutedForeground,
-          tabBarStyle: {
-            backgroundColor: colors.card,
-            paddingBottom: Math.max(insets.bottom, 10),
-            paddingTop: 10,
-            height: 60 + Math.max(insets.bottom, 10),
-          },
-          tabBarLabelStyle: {
-            fontSize: 11,
-          },
-          contentStyle: {
-            backgroundColor: colors.background,
-          },
-        }}>
-        <Tabs.Screen
-          name="inventory"
-          options={{
-            title: 'Inventory',
-            tabBarIcon: ({ color, size }) => (
-              <Icon name="shippingbox.fill" size={size} color={color} />
+    <Tabs
+      screenOptions={{
+        header: headerComponent,
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.mutedForeground,
+        tabBarStyle: {
+          backgroundColor: colors.card,
+          paddingBottom: Math.max(insets.bottom, 10),
+          paddingTop: 10,
+          height: 60 + Math.max(insets.bottom, 10),
+        },
+        tabBarLabelStyle: {
+          fontSize: 11,
+        },
+        contentStyle: {
+          backgroundColor: colors.background,
+        },
+      }}>
+      <Tabs.Screen
+        name="inventory"
+        options={{
+          title: 'Inventory',
+          tabBarIcon: ({ color, size }) => (
+            <Icon name="cube.fill" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="users"
+        options={{
+          title: 'Users',
+          tabBarIcon: ({ color, size }) => (
+            <Icon name="person.fill" size={size} color={color} />
+          ),
+          href: isSuperAdmin ? undefined : null, // Hide from tab bar for employees
+        }}
+      />
+      <Tabs.Screen
+        name="dashboard"
+        options={{
+          title: 'Home',
+          tabBarIcon: ({ focused, color, size }) =>
+            isSuperAdmin ? (
+              <View
+                style={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: 28,
+                  backgroundColor: colors.primary,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: Math.max(insets.bottom, 10),
+                }}>
+                <Icon name="house.fill" size={24} color="#FFFFFF" />
+              </View>
+            ) : (
+              <Icon name="house.fill" size={size} color={color} />
             ),
-          }}
-        />
-        <Tabs.Screen
-          name="users"
-          options={{
-            title: 'Users',
-            tabBarIcon: ({ color, size }) => (
-              <Icon name="person.fill" size={size} color={color} />
-            ),
-            href: isSuperAdmin ? undefined : null, // Hide from tab bar for employees
-          }}
-        />
-        <Tabs.Screen
-          name="dashboard"
-          options={{
-            title: 'Home',
-            tabBarIcon: ({ focused, color, size }) =>
-              isSuperAdmin ? (
-                <View
-                  style={{
-                    width: 56,
-                    height: 56,
-                    borderRadius: 28,
-                    backgroundColor: colors.primary,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginBottom: Math.max(insets.bottom, 10),
-                  }}>
-                  <Icon name="house.fill" size={24} color="#FFFFFF" />
-                </View>
-              ) : (
-                <Icon name="house.fill" size={size} color={color} />
-              ),
-            tabBarLabel: isSuperAdmin ? '' : 'Home',
-          }}
-        />
-        <Tabs.Screen
-          name="sales"
-          options={{
-            title: 'Sales',
-            tabBarIcon: ({ color, size }) => (
-              <Icon name="chart.bar.fill" size={size} color={color} />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="settings"
-          options={{
-            title: 'Offline',
-            tabBarIcon: ({ color, size }) => (
-              <Icon name="externaldrive.fill" size={size} color={color} />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="user-sales"
-          options={{
-            href: null, // Hide from tab bar
-          }}
-        />
-        <Tabs.Screen
-          name="user-expenses"
-          options={{
-            href: null, // Hide from tab bar
-          }}
-        />
-      </Tabs>
+          tabBarLabel: isSuperAdmin ? '' : 'Home',
+        }}
+      />
+      <Tabs.Screen
+        name="sales"
+        options={{
+          title: 'Sales',
+          tabBarIcon: ({ color, size }) => (
+            <Icon name="chart.bar.fill" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: 'Offline',
+          tabBarIcon: ({ color, size }) => (
+            <Icon name="externaldrive.fill" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="user-sales"
+        options={{
+          href: null, // Hide from tab bar
+        }}
+      />
+      <Tabs.Screen
+        name="user-expenses"
+        options={{
+          href: null, // Hide from tab bar
+        }}
+      />
+    </Tabs>
     // </SafeAreaView>
   );
 }

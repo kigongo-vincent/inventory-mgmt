@@ -33,6 +33,7 @@ DerivedData
 *.ipa
 *.xcuserstate
 project.xcworkspace
+app/record-sale.tsx.save
 
 # Android
 /android

@@ -25,11 +25,11 @@ export default function StatDetailsScreen() {
   const params = useLocalSearchParams<{ statType: StatType }>();
   const statType = params.statType as StatType;
   const [refreshing, setRefreshing] = useState(false);
-  
+
   const currentUser = useAuthStore((state) => state.currentUser);
   const normalizedRole = currentUser?.role?.toLowerCase();
   const isSuperAdmin = normalizedRole === 'super_admin' || normalizedRole === 'superadmin';
-  
+
   const allSales = useSaleStore((state) => state.getAllSales);
   const getSalesByUser = useSaleStore((state) => state.getSalesByUser);
   const getProductsByCompany = useProductStore((state) => state.getProductsByCompany);
@@ -38,7 +38,7 @@ export default function StatDetailsScreen() {
   const fetchSales = useSaleStore((state) => state.fetchSales);
   const fetchProducts = useProductStore((state) => state.fetchProducts);
   const settings = useSettingsStore((state) => state.settings);
-  
+
   // Filters
   const [filterProductType, setFilterProductType] = useState<string>('all');
   const [filterProvider, setFilterProvider] = useState<string>('all');
@@ -46,13 +46,13 @@ export default function StatDetailsScreen() {
   const [filterUser, setFilterUser] = useState<string>('all');
   const [filterBranch, setFilterBranch] = useState<string>('all');
   const [breakdownBy, setBreakdownBy] = useState<'productType' | 'provider' | 'size' | 'user' | 'branch'>('productType');
-  
+
   // Get base data
   const userSales = currentUser ? getSalesByUser(currentUser.id) : [];
   const totalSales = isSuperAdmin ? allSales() : userSales;
   const companyProducts = currentUser?.companyId ? getProductsByCompany(currentUser.companyId) : [];
   const defaultCurrency = totalSales.length > 0 ? totalSales[0].currency : settings.defaultCurrency;
-  
+
   // Date calculations
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -63,11 +63,11 @@ export default function StatDetailsScreen() {
   const lastWeekEnd = new Date(thisWeekStart);
   lastWeekEnd.setDate(thisWeekStart.getDate() - 1);
   const thisMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-  
+
   // Filter sales based on stat type
   const filteredSales = useMemo(() => {
     let sales: Sale[] = [];
-    
+
     switch (statType) {
       case 'total-revenue':
       case 'total-sales':
@@ -95,7 +95,7 @@ export default function StatDetailsScreen() {
       default:
         sales = totalSales;
     }
-    
+
     // Apply filters
     if (filterProductType !== 'all') {
       sales = sales.filter((sale) => {
@@ -103,36 +103,36 @@ export default function StatDetailsScreen() {
         return productType === filterProductType;
       });
     }
-    
+
     if (filterProvider !== 'all') {
       sales = sales.filter((sale) => {
         const provider = sale.productAttributes?.provider;
         return provider === filterProvider;
       });
     }
-    
+
     if (filterSize !== 'all') {
       sales = sales.filter((sale) => {
         const size = sale.productAttributes?.size || sale.productAttributes?.gasSize;
         return size === filterSize;
       });
     }
-    
+
     if (filterUser !== 'all' && isSuperAdmin) {
       sales = sales.filter((sale) => sale.sellerId === filterUser);
     }
-    
+
     if (filterBranch !== 'all' && isSuperAdmin) {
       sales = sales.filter((sale) => sale.branch === filterBranch);
     }
-    
+
     return sales;
   }, [statType, totalSales, filterProductType, filterProvider, filterSize, filterUser, filterBranch, isSuperAdmin, today, thisWeekStart, thisMonthStart]);
-  
+
   // Filter products based on stat type
   const filteredProducts = useMemo(() => {
     let products = companyProducts;
-    
+
     switch (statType) {
       case 'low-stock':
         products = companyProducts.filter((p) => p.quantity > 0 && p.quantity < 10);
@@ -143,7 +143,7 @@ export default function StatDetailsScreen() {
       default:
         products = companyProducts;
     }
-    
+
     // Apply filters
     if (filterProductType !== 'all') {
       products = products.filter((p) => {
@@ -151,30 +151,30 @@ export default function StatDetailsScreen() {
         return productType === filterProductType;
       });
     }
-    
+
     if (filterProvider !== 'all') {
       products = products.filter((p) => {
         const provider = p.attributes?.provider;
         return provider === filterProvider;
       });
     }
-    
+
     if (filterSize !== 'all') {
       products = products.filter((p) => {
         const size = p.attributes?.size;
         return size === filterSize;
       });
     }
-    
+
     return products;
   }, [statType, companyProducts, filterProductType, filterProvider, filterSize]);
-  
+
   // Calculate stats
   const totalRevenue = filteredSales.reduce((sum, sale) => sum + sale.totalPrice, 0);
   const totalSalesCount = filteredSales.length;
   const avgSaleValue = filteredSales.length > 0 ? totalRevenue / filteredSales.length : 0;
   const totalInventoryValue = filteredProducts.reduce((sum, p) => sum + (p.price * p.quantity), 0);
-  
+
   // Get unique values for filters
   const productTypes = useMemo(() => {
     const types = new Set<string>();
@@ -191,7 +191,7 @@ export default function StatDetailsScreen() {
     }
     return Array.from(types).sort();
   }, [statType, filteredSales, filteredProducts]);
-  
+
   const providers = useMemo(() => {
     const provs = new Set<string>();
     if (statType.includes('revenue') || statType.includes('sales') || statType === 'avg-sale') {
@@ -207,7 +207,7 @@ export default function StatDetailsScreen() {
     }
     return Array.from(provs).sort();
   }, [statType, filteredSales, filteredProducts]);
-  
+
   const sizes = useMemo(() => {
     const sizeSet = new Set<string>();
     if (statType.includes('revenue') || statType.includes('sales') || statType === 'avg-sale') {
@@ -223,12 +223,12 @@ export default function StatDetailsScreen() {
     }
     return Array.from(sizeSet).sort();
   }, [statType, filteredSales, filteredProducts]);
-  
+
   const users = useMemo(() => {
     if (!isSuperAdmin) return [];
     return allUsers.filter((u) => u.role?.toLowerCase() !== 'super_admin' && u.role?.toLowerCase() !== 'superadmin');
   }, [isSuperAdmin, allUsers]);
-  
+
   const branches = useMemo(() => {
     if (!isSuperAdmin) return [];
     const branchSet = new Set<string>();
@@ -237,18 +237,18 @@ export default function StatDetailsScreen() {
     });
     return Array.from(branchSet).sort();
   }, [isSuperAdmin, filteredSales]);
-  
+
   // Breakdown calculations
   const breakdownData = useMemo(() => {
     const data: Array<{ label: string; value: number; count: number; items?: any[] }> = [];
-    
+
     if (statType.includes('revenue') || statType.includes('sales') || statType === 'avg-sale') {
       const grouped = new Map<string, { revenue: number; count: number; items: Sale[] }>();
-      
+
       filteredSales.forEach((sale) => {
         let key = '';
         let label = '';
-        
+
         switch (breakdownBy) {
           case 'productType':
             key = sale.productAttributes?.type || sale.productName || 'Unknown';
@@ -274,7 +274,7 @@ export default function StatDetailsScreen() {
             label = key;
             break;
         }
-        
+
         const existing = grouped.get(key) || { revenue: 0, count: 0, items: [] };
         grouped.set(key, {
           revenue: existing.revenue + sale.totalPrice,
@@ -282,7 +282,7 @@ export default function StatDetailsScreen() {
           items: [...existing.items, sale],
         });
       });
-      
+
       grouped.forEach((value, key) => {
         data.push({
           label: key,
@@ -294,11 +294,11 @@ export default function StatDetailsScreen() {
     } else {
       // For product stats
       const grouped = new Map<string, { value: number; count: number; items: any[] }>();
-      
+
       filteredProducts.forEach((product) => {
         let key = '';
         let label = '';
-        
+
         switch (breakdownBy) {
           case 'productType':
             key = product.attributes?.type || product.name || 'Unknown';
@@ -315,7 +315,7 @@ export default function StatDetailsScreen() {
           default:
             return;
         }
-        
+
         const existing = grouped.get(key) || { value: 0, count: 0, items: [] };
         const productValue = statType === 'inventory-value' ? product.price * product.quantity : 1;
         grouped.set(key, {
@@ -324,7 +324,7 @@ export default function StatDetailsScreen() {
           items: [...existing.items, product],
         });
       });
-      
+
       grouped.forEach((value, key) => {
         data.push({
           label: key,
@@ -334,10 +334,10 @@ export default function StatDetailsScreen() {
         });
       });
     }
-    
+
     return data.sort((a, b) => b.value - a.value);
   }, [statType, filteredSales, filteredProducts, breakdownBy, isSuperAdmin, users]);
-  
+
   const getStatTitle = () => {
     switch (statType) {
       case 'total-revenue':
@@ -364,7 +364,7 @@ export default function StatDetailsScreen() {
         return 'Stat Details';
     }
   };
-  
+
   const getStatValue = () => {
     switch (statType) {
       case 'total-revenue':
@@ -386,7 +386,7 @@ export default function StatDetailsScreen() {
         return '0';
     }
   };
-  
+
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
@@ -400,17 +400,17 @@ export default function StatDetailsScreen() {
       setRefreshing(false);
     }
   };
-  
+
   const isSalesStat = statType.includes('revenue') || statType.includes('sales') || statType === 'avg-sale';
   const isProductStat = statType.includes('product') || statType === 'inventory-value' || statType === 'low-stock' || statType === 'out-of-stock';
-  
+
   // Ensure breakdownBy is valid for current stat type
   useEffect(() => {
     if (isProductStat && (breakdownBy === 'user' || breakdownBy === 'branch')) {
       setBreakdownBy('productType');
     }
   }, [statType, breakdownBy, isProductStat]);
-  
+
   return (
     <View className="flex-1" style={{ backgroundColor: colors.background }}>
       <TabHeader />
@@ -449,7 +449,7 @@ export default function StatDetailsScreen() {
               </Text>
             </View>
           </View>
-          
+
           {/* Filters */}
           <View className="mb-6 gap-4">
             {/* Breakdown By */}
@@ -517,7 +517,7 @@ export default function StatDetailsScreen() {
                 </View>
               </ScrollView>
             </View>
-            
+
             {/* Product Type Filter */}
             {productTypes.length > 0 && (
               <View>
@@ -562,7 +562,7 @@ export default function StatDetailsScreen() {
                 </ScrollView>
               </View>
             )}
-            
+
             {/* Provider Filter */}
             {providers.length > 0 && (
               <View>
@@ -607,7 +607,7 @@ export default function StatDetailsScreen() {
                 </ScrollView>
               </View>
             )}
-            
+
             {/* Size Filter */}
             {sizes.length > 0 && (
               <View>
@@ -621,9 +621,9 @@ export default function StatDetailsScreen() {
                   <View className="flex-row gap-2">
                     {[
                       { label: 'All Sizes', value: 'all' },
-                      ...sizes.map((size) => ({ 
-                        label: size === '2 plates' ? '2 Plates' : size === '3 plates' ? '3 Plates' : size, 
-                        value: size 
+                      ...sizes.map((size) => ({
+                        label: size === '2 plates' ? '2 Plates' : size === '3 plates' ? '3 Plates' : size,
+                        value: size
                       })),
                     ].map((option) => {
                       const isSelected = filterSize === option.value;
@@ -655,7 +655,7 @@ export default function StatDetailsScreen() {
                 </ScrollView>
               </View>
             )}
-            
+
             {/* User Filter (Super Admin only) */}
             {isSalesStat && isSuperAdmin && users.length > 0 && (
               <View>
@@ -700,7 +700,7 @@ export default function StatDetailsScreen() {
                 </ScrollView>
               </View>
             )}
-            
+
             {/* Branch Filter (Super Admin only) */}
             {isSalesStat && isSuperAdmin && branches.length > 0 && (
               <View>
@@ -746,7 +746,7 @@ export default function StatDetailsScreen() {
               </View>
             )}
           </View>
-          
+
           {/* Breakdown Summary */}
           <View className="mb-6">
             <Text variant="subhead" className="mb-4" style={{ fontSize: 13, color: colors.mutedForeground, textTransform: 'uppercase', letterSpacing: 0.5 }}>
@@ -817,7 +817,7 @@ export default function StatDetailsScreen() {
               </View>
             )}
           </View>
-          
+
           {/* Detailed List */}
           <View className="mb-6">
             <Text variant="subhead" className="mb-4" style={{ fontSize: 13, color: colors.mutedForeground, textTransform: 'uppercase', letterSpacing: 0.5 }}>
@@ -857,9 +857,9 @@ export default function StatDetailsScreen() {
                                 ` (${sale.productAttributes.size})`
                               )}
                               {sale.productAttributes?.provider && (
-                                sale.productAttributes.type === 'Full Gas Cylinder' || 
-                                sale.productAttributes.type === 'Regulator' || 
-                                sale.productAttributes.type === 'New Kit'
+                                sale.productAttributes.type === 'Full Gas Cylinder' ||
+                                  sale.productAttributes.type === 'Regulator' ||
+                                  sale.productAttributes.type === 'New Kit'
                                   ? ` [${sale.productAttributes.provider}]`
                                   : ''
                               )}
@@ -883,7 +883,7 @@ export default function StatDetailsScreen() {
                   <View
                     className="rounded-2xl px-5 py-12 items-center justify-center"
                     style={{ backgroundColor: colors.card }}>
-                    <Icon name="shippingbox.fill" size={40} color={colors.primary} style={{ opacity: 0.3, marginBottom: 12 }} />
+                    <Icon name="cube.fill" size={40} color={colors.primary} style={{ opacity: 0.3, marginBottom: 12 }} />
                     <Text variant="subhead" color="tertiary" style={{ fontSize: 16 }}>
                       No products found
                     </Text>

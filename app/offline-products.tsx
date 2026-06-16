@@ -18,7 +18,7 @@ export default function OfflineProductsScreen() {
   const allProducts = useProductStore((state) => state.products);
   const deleteProduct = useProductStore((state) => state.deleteProduct);
   const fetchProducts = useProductStore((state) => state.fetchProducts);
-  
+
   const [showActionSheet, setShowActionSheet] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
@@ -166,7 +166,7 @@ export default function OfflineProductsScreen() {
                 <View
                   className="h-12 w-12 items-center justify-center rounded-xl"
                   style={{ backgroundColor: colors.background }}>
-                  <Icon name="shippingbox.fill" size={22} color={colors.primary} />
+                  <Icon name="cube.fill" size={22} color={colors.primary} />
                 </View>
               </View>
             </View>
@@ -179,7 +179,7 @@ export default function OfflineProductsScreen() {
               style={{
                 backgroundColor: colors.card,
               }}>
-              <Icon name="shippingbox" size={40} color={colors.primary} style={{ opacity: 0.3, marginBottom: 12 }} />
+              <Icon name="cube" size={40} color={colors.primary} style={{ opacity: 0.3, marginBottom: 12 }} />
               <Text variant="body" color="tertiary" style={{ marginBottom: 4 }}>
                 No products found
               </Text>
@@ -193,7 +193,7 @@ export default function OfflineProductsScreen() {
                 // Get attributes for display
                 const attributes = product.attributes || {};
                 const gasSize = attributes.gasSize;
-                
+
                 return (
                   <Pressable
                     key={product.id}

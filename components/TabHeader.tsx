@@ -57,7 +57,7 @@ export function TabHeader() {
                   <Input
                     value={searchQuery}
                     onChangeText={setSearchQuery}
-                    placeholder="Search sales, products..."
+                    placeholder="Search..."
                     placeholderTextColor={colors.mutedForeground}
                     className="flex-1 text-base "
                     style={{

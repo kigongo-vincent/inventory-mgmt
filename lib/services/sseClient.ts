@@ -15,7 +15,9 @@ export interface SaleEvent {
 }
 
 /** Recursively validate SSE response: format (data: ...) and JSON event shape. */
-function validateSSELine(line: string): { valid: true; data: string } | { valid: false; reason: string } {
+function validateSSELine(
+  line: string
+): { valid: true; data: string } | { valid: false; reason: string } {
   const trimmed = line.trim();
   if (!trimmed) {
     return { valid: false, reason: 'empty line' };
@@ -35,7 +37,9 @@ function isPlainObject(v: unknown): v is Record<string, unknown> {
 }
 
 /** Recursively validate event JSON: type required; for new_sale require known fields. */
-function validateEventPayload(obj: unknown): { valid: true; event: Record<string, unknown> } | { valid: false; reason: string } {
+function validateEventPayload(
+  obj: unknown
+): { valid: true; event: Record<string, unknown> } | { valid: false; reason: string } {
   if (!isPlainObject(obj)) {
     return { valid: false, reason: 'event is not an object' };
   }
@@ -127,7 +131,9 @@ class SSEClient {
         // Only verify status once headers are received
         if (xhr.readyState >= 2) {
           if (xhr.status < 200 || xhr.status >= 300) {
-            this.handleConnectionError(new Error(`SSE connection failed with status: ${xhr.status}`));
+            this.handleConnectionError(
+              new Error(`SSE connection failed with status: ${xhr.status}`)
+            );
             return;
           }
         }

@@ -637,7 +637,7 @@ export default function DashboardScreen() {
                       <View
                         className="h-11 w-11 items-center justify-center rounded-xl"
                         style={{ backgroundColor: colors.background }}>
-                        <Icon name="shippingbox.fill" size={22} color={colors.primary} />
+                        <Icon name="cube.fill" size={22} color={colors.primary} />
                       </View>
                     </View>
                     <Text variant="footnote" color="tertiary" style={{ fontSize: 13 }}>

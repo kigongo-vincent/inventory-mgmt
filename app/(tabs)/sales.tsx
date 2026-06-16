@@ -399,8 +399,8 @@ export default function SalesScreen() {
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
-                style={{ 
-                  flex: 1, 
+                style={{
+                  flex: 1,
                   flexShrink: 1,
                   maxWidth: Dimensions.get('window').width - 92 // Screen width minus padding (40px) - button (40px) - gap (12px)
                 }}
@@ -430,7 +430,7 @@ export default function SalesScreen() {
                   </Pressable>
                 ))}
               </ScrollView>
-              
+
               {/* Filter Button */}
               <Pressable
                 onPress={() => setShowFiltersSheet(true)}
@@ -504,7 +504,7 @@ export default function SalesScreen() {
               <View className="gap-3">
                 {sales.map((sale) => {
                   const isUnpaid = (sale.paymentStatus || 'credit') === 'promised';
-                  
+
                   return (
                     <Pressable
                       key={sale.id}
@@ -549,9 +549,9 @@ export default function SalesScreen() {
                                   : ` (${sale.productAttributes.size})`
                               )}
                               {sale.productAttributes?.provider && (
-                                sale.productAttributes.type === 'Full Gas Cylinder' || 
-                                sale.productAttributes.type === 'Regulator' || 
-                                sale.productAttributes.type === 'New Kit'
+                                sale.productAttributes.type === 'Full Gas Cylinder' ||
+                                  sale.productAttributes.type === 'Regulator' ||
+                                  sale.productAttributes.type === 'New Kit'
                                   ? ` [${sale.productAttributes.provider}]`
                                   : ''
                               )}
@@ -658,7 +658,7 @@ export default function SalesScreen() {
                 ...(isSuperAdmin ? [{ key: 'user', label: 'User', icon: 'person.fill' }] : []),
                 { key: 'branch', label: 'Branch', icon: 'building.2.fill' },
                 { key: 'payment', label: 'Payment', icon: 'creditcard.fill' },
-                { key: 'productType', label: 'Product', icon: 'shippingbox.fill' },
+                { key: 'productType', label: 'Product', icon: 'cube.fill' },
                 { key: 'size', label: 'Size', icon: 'square.grid.2x2' },
                 { key: 'provider', label: 'Provider', icon: 'tag.fill' },
               ].map((tab) => {
@@ -898,9 +898,9 @@ export default function SalesScreen() {
                   </Text>
                   {[
                     { label: 'All Sizes', value: 'all' },
-                    ...allSizes.map((size) => ({ 
-                      label: size === '2 plates' ? '2 Plates' : size === '3 plates' ? '3 Plates' : size, 
-                      value: size 
+                    ...allSizes.map((size) => ({
+                      label: size === '2 plates' ? '2 Plates' : size === '3 plates' ? '3 Plates' : size,
+                      value: size
                     })),
                   ].map((option, index) => {
                     const isSelected = filterSize === option.value;
@@ -1069,9 +1069,9 @@ export default function SalesScreen() {
         title="Filter by Size"
         options={[
           { label: 'All Sizes', value: 'all' },
-          ...allSizes.map((size) => ({ 
-            label: size === '2 plates' ? '2 Plates' : size === '3 plates' ? '3 Plates' : size, 
-            value: size 
+          ...allSizes.map((size) => ({
+            label: size === '2 plates' ? '2 Plates' : size === '3 plates' ? '3 Plates' : size,
+            value: size
           })),
         ]}
         selectedValue={filterSize}

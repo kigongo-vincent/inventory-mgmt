@@ -4,10 +4,7 @@
     "slug": "gas-center",
     "version": "1.0.9",
     "scheme": "gas-center",
-    "platforms": [
-      "ios",
-      "android"
-    ],
+    "platforms": ["ios", "android"],
     "web": {
       "bundler": "metro",
       "output": "static",
@@ -37,9 +34,7 @@
       "resizeMode": "contain",
       "backgroundColor": "#121212"
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.inventory-mgmt.app",
@@ -50,6 +45,7 @@
     },
     "android": {
       "package": "com.inventorymgmt.app",
+      "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon.jpg",
         "backgroundColor": "#ffffff"

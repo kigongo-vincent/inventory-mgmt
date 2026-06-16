@@ -62,11 +62,11 @@ export default function LoginScreen() {
   return (
     <>
       <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-      <SafeAreaView key={colorScheme} className="flex-1" style={{ backgroundColor: colors.background }}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
-          className="flex-1">
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+        className="flex-1">
+        <SafeAreaView key={colorScheme} className="flex-1" style={{ backgroundColor: colors.background }}>
           <ScrollView
             contentContainerStyle={{ flexGrow: 1 }}
             keyboardShouldPersistTaps="handled"
@@ -74,25 +74,23 @@ export default function LoginScreen() {
             bounces={false}>
             <View className="flex-1 px-6 justify-center">
               <View className="mb-8 items-center">
-                <View className='mb-2 items-center justify-center overflow-hidden rounded-xl ' style={{ height: 100, width: 150 }}>
+                <View className=' items-center justify-center overflow-hidden rounded-xl ' style={{ height: 100, width: 150 }}>
                   <Image
-                    className='object-fit'
-                    style={{ height: 120, width: 400, borderRadius: 20, marginBottom: 8, overflow: "hidden", aspectRatio: "auto" }}
+                    style={{ height: 100, width: 100 }}
                     source={require("@/assets/icon.jpg")}
-                    resizeMode="contain"
                   />
                 </View>
-                <Text variant="title1" className="mb-2 text-center">
+                <Text variant={"title3"} className=" text-center">
                   Gas Center
                 </Text>
-                <Text color="tertiary" className="text-center">
-                  Gas Selling & Distribution
+                <Text color="tertiary" variant={"caption2"} className="text-center">
+                  login to your account
                 </Text>
               </View>
 
               <View className="gap-4">
                 <View>
-                  <Text variant="subhead" className="mb-2">
+                  <Text variant={"caption2"} className="mb-2">
                     Username or phone number
                   </Text>
                   <Input
@@ -107,8 +105,8 @@ export default function LoginScreen() {
                 </View>
 
                 <View>
-                  <Text variant="subhead" className="mb-2">
-                    Password
+                  <Text variant={"caption2"} className="mb-2">
+                    Password*
                   </Text>
                   <View className="relative">
                     <Input
@@ -148,8 +146,8 @@ export default function LoginScreen() {
               </View>
             </View>
           </ScrollView>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
+        </SafeAreaView>
+      </KeyboardAvoidingView>
     </>
   );
 }
