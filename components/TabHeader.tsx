@@ -1,3 +1,4 @@
+import AntDesign from '@expo/vector-icons/AntDesign';
 import { router } from 'expo-router';
 import React, { useState, useEffect, useRef } from 'react';
 import { Pressable, View, Image, Text as RNText, AppState } from 'react-native';
@@ -12,7 +13,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useNotificationStore } from '@/store/notificationStore';
 
 export function TabHeader() {
-  const { colors, colorScheme } = useColorScheme();
+  const { colors, colorScheme, toggleColorScheme } = useColorScheme();
   const currentUser = useAuthStore((state) => state.currentUser);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const [searchQuery, setSearchQuery] = useState('');
@@ -50,7 +51,7 @@ export function TabHeader() {
                 <View
                   className="flex-1 pr-4 justify-center rounded-xl"
                   style={{
-                    backgroundColor: colors.input || colors.background,
+                    backgroundColor: colors.background,
                     height: 40,
                   }}>
                   <Input
@@ -58,7 +59,7 @@ export function TabHeader() {
                     onChangeText={setSearchQuery}
                     placeholder="Search sales, products..."
                     placeholderTextColor={colors.mutedForeground}
-                    className="flex-1 text-base pl-10"
+                    className="flex-1 text-base "
                     style={{
                       backgroundColor: 'transparent',
                       color: colors.foreground,
@@ -71,12 +72,25 @@ export function TabHeader() {
                       }
                     }}
                   />
-                  <View className="absolute left-3.5 top-0 bottom-0 justify-center pointer-events-none">
+                  {/* <View className="absolute left-3.5 top-0 bottom-0 justify-center pointer-events-none">
                     <Icon name="magnifyingglass" size={18} color={colors.mutedForeground} />
-                  </View>
+                  </View> */}
                 </View>
               </View>
               <View className="flex-row items-center gap-2.5">
+                <Pressable
+                  onPress={toggleColorScheme}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  className="p-1.5">
+                  <View
+                    className="h-10 w-10 rounded-full items-center justify-center"
+                    style={{
+                      backgroundColor: colors.background,
+                    }}>
+                    <AntDesign
+                      name={colorScheme != 'dark' ? 'sun' : 'moon'} size={18} color={colors.foreground} />
+                  </View>
+                </Pressable>
                 <Pressable
                   onPress={() => router.push('/notifications')}
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}

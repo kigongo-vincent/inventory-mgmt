@@ -41,6 +41,49 @@ export interface AppSettings {
 const FULL_GAS_CYLINDER_SIZES = ['12kg', '13kg', '45kg'];
 const SIZE_ORDER = ['3kg', '6kg', '12kg', '12.5kg', '13kg', '45kg', '20mm', '27mm', '2 plates', '3 plates', 'none'];
 
+// Canonical Uganda LPG provider list (2025)
+const CANONICAL_PROVIDERS = [
+  'Vivo Energy (Shell)',
+  'TotalEnergies',
+  'Stabex International',
+  'Oryx Energies',
+  'Rubis Energy',
+  'Hass Petroleum',
+  'Lake Gas Uganda',
+  'Gaz Uganda',
+  'Petro Uganda',
+  'Ven Petroleum',
+  'Afrigaz',
+  'Kampala Gas',
+  'K-Gas',
+  'Jibu Gas',
+  'Other',
+];
+
+// Merge canonical providers into persisted prop_provider options without losing custom entries
+function migrateProviders(settings: AppSettings): AppSettings {
+  const productProperties = settings.productProperties || [];
+  const providerProp = productProperties.find((p) => p.id === 'prop_provider');
+  if (!providerProp) return settings;
+
+  const existingOptions = providerProp.options || [];
+  const merged = new Set<string>(CANONICAL_PROVIDERS);
+  // Preserve any custom entries the user may have already added
+  existingOptions.forEach((o) => merged.add(o));
+  // Ensure 'Other' is always last
+  const withoutOther = Array.from(merged).filter((o) => o !== 'Other').sort();
+  const newOptions = [...withoutOther, 'Other'];
+
+  if (JSON.stringify(existingOptions) === JSON.stringify(newOptions)) return settings;
+
+  return {
+    ...settings,
+    productProperties: productProperties.map((p) =>
+      p.id === 'prop_provider' ? { ...p, options: newOptions } : p
+    ),
+  };
+}
+
 function ensureFullGasCylinderSizes(settings: AppSettings): AppSettings {
   let gasSizes = settings.gasSizes ? [...settings.gasSizes] : [...SIZE_ORDER];
   let changed = false;
@@ -122,15 +165,22 @@ const defaultSettings: AppSettings = {
       name: 'Provider/Brand',
       type: 'select',
       options: [
-        'Shell',
-        'Vivo Energy',
+        'Vivo Energy (Shell)',
+        'TotalEnergies',
         'Stabex International',
-        'Total Energies',
         'Oryx Energies',
         'Rubis Energy',
-        'HAS Petroleum',
+        'Hass Petroleum',
+        'Lake Gas Uganda',
+        'Gaz Uganda',
+        'Petro Uganda',
+        'Ven Petroleum',
+        'Afrigaz',
+        'Kampala Gas',
+        'K-Gas',
+        'Jibu Gas',
         'Other',
-      ], // Major LPG gas providers in Uganda (2025)
+      ], // LPG gas providers in Uganda (2025)
       required: false,
       order: 3,
       useForFiltering: true,
@@ -161,7 +211,22 @@ const defaultSettings: AppSettings = {
   defaultCurrency: 'UGX',
   // Service settings
   serviceTypes: ['Cylinder Refill'],
-  serviceBrands: ['Stand', 'Hass', 'Total', 'Shell', 'Vivo Energy', 'Stabex', 'Oryx', 'Rubis'],
+  serviceBrands: [
+    'Vivo Energy (Shell)',
+    'TotalEnergies',
+    'Stabex International',
+    'Oryx Energies',
+    'Rubis Energy',
+    'Hass Petroleum',
+    'Lake Gas Uganda',
+    'Gaz Uganda',
+    'Petro Uganda',
+    'Ven Petroleum',
+    'Afrigaz',
+    'Kampala Gas',
+    'K-Gas',
+    'Jibu Gas',
+  ],
   serviceSizes: ['3kg', '6kg', '12kg', '12.5kg', '13kg', '45kg'],
 };
 
@@ -190,13 +255,8 @@ export const useSettingsStore = create<SettingsState>()(
       settings: defaultSettings,
       updateSettings: (updates) => {
         set((state) => {
-          // Prevent theme changes - always keep it as 'dark'
-          const filteredUpdates = { ...updates };
-          if ('colorScheme' in filteredUpdates) {
-            delete filteredUpdates.colorScheme;
-          }
           return {
-            settings: { ...state.settings, ...filteredUpdates },
+            settings: { ...state.settings, ...updates },
           };
         });
       },
@@ -320,7 +380,8 @@ export const useSettingsStore = create<SettingsState>()(
       storage: createJSONStorage(() => AsyncStorage),
       onRehydrateStorage: () => (state) => {
         if (state?.settings) {
-          const migrated = ensureFullGasCylinderSizes(state.settings);
+          let migrated = ensureFullGasCylinderSizes(state.settings);
+          migrated = migrateProviders(migrated);
           if (migrated !== state.settings) {
             useSettingsStore.setState({ settings: migrated });
           }

@@ -50,6 +50,7 @@ export default function LoginScreen() {
           result.error === 'network' ? 'Connection Error' : 'Login Error',
           result.message || 'An error occurred during login'
         );
+        console.log(username, password)
       }
     } catch (error) {
       Alert.alert('Error', 'An unexpected error occurred during login. Please try again.');
@@ -73,14 +74,14 @@ export default function LoginScreen() {
             bounces={false}>
             <View className="flex-1 px-6 justify-center">
               <View className="mb-8 items-center">
-                {/* <View className='mb-2 items-center justify-center overflow-hidden rounded-xl ' style={{ height: 100, width: 150 }}>
+                <View className='mb-2 items-center justify-center overflow-hidden rounded-xl ' style={{ height: 100, width: 150 }}>
                   <Image
                     className='object-fit'
                     style={{ height: 120, width: 400, borderRadius: 20, marginBottom: 8, overflow: "hidden", aspectRatio: "auto" }}
-                    source={require("../../assets/logo.png")}
+                    source={require("@/assets/icon.jpg")}
                     resizeMode="contain"
                   />
-                </View> */}
+                </View>
                 <Text variant="title1" className="mb-2 text-center">
                   Gas Center
                 </Text>
@@ -92,12 +93,12 @@ export default function LoginScreen() {
               <View className="gap-4">
                 <View>
                   <Text variant="subhead" className="mb-2">
-                    Username
+                    Username or phone number
                   </Text>
                   <Input
                     value={username}
                     onChangeText={setUsername}
-                    placeholder="Enter username"
+                    placeholder="Enter username or phone number"
                     autoCapitalize="none"
                     autoCorrect={false}
                     returnKeyType="next"

@@ -1,5 +1,5 @@
-import { router } from 'expo-router';
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Alert, View, Pressable, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -18,6 +18,7 @@ import { useSaleStore } from '@/store/saleStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import { withOpacity } from '@/theme/with-opacity';
 import { GasSize, ProductType, Product, PaymentStatus } from '@/types';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
 export default function RecordSaleScreen() {
   const { colors, baseFontSize: rawBaseFontSize, colorScheme } = useColorScheme();
@@ -40,6 +41,8 @@ export default function RecordSaleScreen() {
   const isLoadingSales = useSaleStore((state) => state.isLoading);
   const [isProcessing, setIsProcessing] = useState(false);
 
+
+
   // Fetch products from backend when component mounts
   useEffect(() => {
     const loadProducts = async () => {
@@ -53,12 +56,56 @@ export default function RecordSaleScreen() {
     loadProducts();
   }, [fetchProducts]);
 
+  // update the default value of price 
+  useFocusEffect(useCallback(() => {
+    if (servicePlaceholderProduct?.price.toString()) {
+      setServicePrice(servicePlaceholderProduct?.price.toString())
+    }
+  }, []))
+
   const productTypes = settings.productTypes || [];
   const gasSizes = settings.gasSizes || [];
   const productProperties = settings.productProperties || [];
   const serviceTypes = settings.serviceTypes || ['Cylinder Refill'];
-  const serviceBrands = settings.serviceBrands || ['Stand', 'Hass', 'Total', 'Shell', 'Vivo Energy', 'Stabex', 'Oryx', 'Rubis'];
   const serviceSizes = settings.serviceSizes || ['3kg', '6kg', '12kg', '12.5kg', '13kg', '45kg'];
+
+  // Merge brands from: settings.serviceBrands, prop_provider options, and actual product providers
+  // so custom brands added when creating a product show up here too
+  const serviceBrands = useMemo(() => {
+    const brandSet = new Set<string>();
+    const providerProp = productProperties.find((p) => p.id === 'prop_provider');
+    const staticBrands = settings.serviceBrands && settings.serviceBrands.length > 0
+      ? settings.serviceBrands
+      : providerProp?.options || [
+        'Vivo Energy (Shell)',
+        'TotalEnergies',
+        'Stabex International',
+        'Oryx Energies',
+        'Rubis Energy',
+        'Hass Petroleum',
+        'Lake Gas Uganda',
+        'Gaz Uganda',
+        'Petro Uganda',
+        'Ven Petroleum',
+        'Afrigaz',
+        'Kampala Gas',
+        'K-Gas',
+        'Jibu Gas',
+      ];
+
+    staticBrands.filter(Boolean).forEach((b) => brandSet.add(b));
+    if (providerProp?.options) {
+      providerProp.options
+        .filter((o) => o && o !== 'Other')
+        .forEach((o) => brandSet.add(o));
+    }
+    allProducts.forEach((p) => {
+      if (p.attributes?.provider && p.attributes.provider !== 'Other') {
+        brandSet.add(p.attributes.provider);
+      }
+    });
+    return Array.from(brandSet).sort();
+  }, [settings.serviceBrands, productProperties, allProducts]);
 
   // Product vs Service mode - first question
   const [saleMode, setSaleMode] = useState<'product' | 'service'>('product');
@@ -75,18 +122,23 @@ export default function RecordSaleScreen() {
 
   // Get provider options from products or settings
   const providerOptions = useMemo(() => {
-    const providerProp = productProperties.find(p => p.id === 'prop_provider');
-    if (providerProp?.options && providerProp.options.length > 0) {
-      return providerProp.options;
+    const providerProp = productProperties.find((p) => p.id === 'prop_provider');
+    const providerSet = new Set<string>();
+
+    if (providerProp?.options) {
+      providerProp.options.filter(Boolean).forEach((option) => providerSet.add(option));
     }
-    // Extract unique providers from existing products
-    const providers = new Set<string>();
-    allProducts.forEach(p => {
-      if (p.attributes?.provider) {
-        providers.add(p.attributes.provider);
+
+    allProducts.forEach((p) => {
+      const productProvider = p.attributes?.provider;
+      if (productProvider && productProvider !== 'Other') {
+        providerSet.add(productProvider);
       }
     });
-    return Array.from(providers).sort();
+
+    const sortedOptions = Array.from(providerSet).filter((opt) => opt !== 'Other').sort();
+    if (providerSet.has('Other')) sortedOptions.push('Other');
+    return sortedOptions;
   }, [productProperties, allProducts]);
 
   const [productType, setProductType] = useState<ProductType>(() => {
@@ -127,7 +179,7 @@ export default function RecordSaleScreen() {
   // Check if size should be shown (only for Full Gas Cylinder)
   const isFullGasCylinder = productType === 'Full Gas Cylinder';
   const shouldShowSize = isFullGasCylinder;
-  
+
   // Check if provider should be shown (only for Full Gas Cylinder)
   const shouldShowProvider = isFullGasCylinder;
 
@@ -194,11 +246,11 @@ export default function RecordSaleScreen() {
   const filterAttributes: Record<string, any> = {
     type: validProductType,
   };
-  
+
   if (shouldShowSize) {
     filterAttributes.size = validGasSize;
   }
-  
+
   if (provider !== 'all') {
     filterAttributes.provider = provider;
   }
@@ -238,9 +290,12 @@ export default function RecordSaleScreen() {
     ) || null;
   }, [currentUser?.companyId, allProducts, serviceBrand, serviceSize]);
 
+  const defaultServicePrice = servicePlaceholderProduct?.price || 0;
+  const effectiveServicePrice = parseFloat(servicePrice) || defaultServicePrice;
+
   // Calculate unit price (product price or service price)
   const unitPrice = saleMode === 'service'
-    ? (parseFloat(servicePrice) || 0)
+    ? effectiveServicePrice
     : (product?.price || 0);
 
   // Service quantity (always 1 for services - the "quantity" is the size like 3kg)
@@ -315,13 +370,13 @@ export default function RecordSaleScreen() {
   };
 
   const handleRecordServiceSale = async (syncStatus: 'online' | 'offline') => {
-    const priceVal = parseFloat(servicePrice);
-    if (isNaN(priceVal) || priceVal <= 0) {
-      Alert.alert('Error', 'Please enter a valid price');
-      return;
-    }
     if (!serviceBrand || !serviceSize) {
       Alert.alert('Error', 'Please select brand and size');
+      return;
+    }
+    const priceVal = parseFloat(servicePrice) || defaultServicePrice;
+    if (priceVal <= 0) {
+      Alert.alert('Error', 'Please enter a valid price');
       return;
     }
     if (!servicePlaceholderProduct?.id) {
@@ -665,9 +720,9 @@ export default function RecordSaleScreen() {
                         <Text style={{ fontSize: 13.5, color: colors.foreground, fontWeight: '400', marginTop: 4 }}>Product</Text>
                       </View>
                     </Pressable>
-                    <Pressable onPress={() => {}} style={({ pressed }) => ({ opacity: pressed ? 0.95 : 1, flex: 1 })}>
+                    <Pressable onPress={() => { }} style={({ pressed }) => ({ opacity: pressed ? 0.95 : 1, flex: 1 })}>
                       <View className="rounded-xl px-4 py-3 items-center" style={{ backgroundColor: colors.primary, borderWidth: 0.5, borderColor: colors.primary }}>
-                        <Icon name="wrench.and.screwdriver.fill" size={24} color={colors.primaryForeground} />
+                        <MaterialCommunityIcons name="gas-cylinder" size={24} color={colors.background} />
                         <Text style={{ fontSize: 13.5, color: colors.primaryForeground, fontWeight: '600', marginTop: 4 }}>Service</Text>
                       </View>
                     </Pressable>
@@ -768,7 +823,11 @@ export default function RecordSaleScreen() {
                   <Input
                     value={servicePrice}
                     onChangeText={setServicePrice}
-                    placeholder="Enter price"
+                    placeholder={
+                      servicePlaceholderProduct
+                        ? `Default: ${formatCurrency(servicePlaceholderProduct.price, servicePlaceholderProduct.currency)}`
+                        : 'Enter price'
+                    }
                     keyboardType="numeric"
                     style={{
                       backgroundColor: colors.background,

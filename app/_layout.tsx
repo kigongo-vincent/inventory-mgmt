@@ -252,6 +252,7 @@ export default function RootLayout() {
                   <Stack.Screen name="account-settings" options={{ headerShown: false }} />
                   <Stack.Screen name="app-settings" options={{ headerShown: false }} />
                   <Stack.Screen name="edit-profile" options={{ headerShown: false }} />
+                  <Stack.Screen name="edit-product" options={{ headerShown: false }} />
                   <Stack.Screen name="change-password" options={{ headerShown: false }} />
                   <Stack.Screen name="notifications" options={{ headerShown: false }} />
                   <Stack.Screen name="notification-preferences" options={{ headerShown: false }} />
@@ -272,9 +273,10 @@ export default function RootLayout() {
                     }}
                   />
                   <Stack.Screen name="record-expense" options={{ headerShown: false }} />
+                  <Stack.Screen name="add-product" options={{ headerShown: false }} />
+                  <Stack.Screen name="add-stock" options={{ headerShown: false }} />
                   <Stack.Screen name="edit-sale" options={{ headerShown: false }} />
                   <Stack.Screen name="edit-user" options={{ headerShown: false }} />
-                  <Stack.Screen name="edit-product" options={{ headerShown: false }} />
                   <Stack.Screen name="edit-branch" options={{ headerShown: false }} />
                 </Stack>
               </NavThemeProvider>

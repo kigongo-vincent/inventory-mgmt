@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import React from 'react';
-import { ScrollView, View, Pressable, Alert, Image } from 'react-native';
+import { ScrollView, View, Pressable, Alert, Image, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 
@@ -200,12 +200,13 @@ export default function SettingsScreen() {
                 Preferences
               </Text>
               <View
-                className="flex-row items-center justify-between py-3"
-                style={{ opacity: 0.5 }}>
-                <View className="flex-row items-center gap-3">
+                className="flex-row hidden items-center justify-between py-3"
+              // style={{ opacity: 0.5 }}
+              >
+                <TouchableOpacity className="flex-row items-center gap-3">
                   <Icon name="gearshape.fill" size={24} color={colors.foreground} />
                   <Text variant="subhead">App Settings</Text>
-                </View>
+                </TouchableOpacity>
                 <Icon name="chevron.right" size={20} color={colors.mutedForeground} />
               </View>
               <View className="h-px my-2" style={{ backgroundColor: colors.border, opacity: 0.2 }} />

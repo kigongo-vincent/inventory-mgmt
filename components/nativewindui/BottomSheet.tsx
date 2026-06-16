@@ -58,7 +58,7 @@ export function BottomSheet({
       slideAnim.setValue(SCREEN_HEIGHT);
       backdropOpacity.setValue(0);
       scaleAnim.setValue(0.95);
-      
+
       // Animate in with spring-like easing
       Animated.parallel([
         Animated.spring(slideAnim, {
@@ -116,16 +116,16 @@ export function BottomSheet({
     onClose();
   };
 
-  // Calculate content height
+  // Calculate content height using the available viewport for a better mobile fit.
   const optionHeight = 56;
   const titleHeight = title ? 60 : 0;
-  const cancelHeight = 70; // Increased for larger button
+  const cancelHeight = 70;
   const padding = 20;
   const handleHeight = 20;
-  const safeAreaBottom = 20; // Extra space for safe area
+  const extraBottomSpace = insets.bottom + 24;
   const contentHeight = Math.min(
-    titleHeight + (options.length * optionHeight) + cancelHeight + padding + handleHeight + safeAreaBottom,
-    500
+    titleHeight + (options.length * optionHeight) + cancelHeight + padding + handleHeight + extraBottomSpace,
+    SCREEN_HEIGHT * 0.88
   );
 
   return (
@@ -148,14 +148,15 @@ export function BottomSheet({
               opacity: backdropOpacity,
             }}
           />
-          
+
           <TouchableWithoutFeedback>
             <Animated.View
               style={{
                 backgroundColor: colors.card,
                 borderTopLeftRadius: 20,
                 borderTopRightRadius: 20,
-                maxHeight: contentHeight,
+                height: contentHeight,
+                maxHeight: SCREEN_HEIGHT * 0.92,
                 transform: [
                   { translateY: slideAnim },
                   { scale: scaleAnim },
@@ -180,7 +181,7 @@ export function BottomSheet({
 
               {/* Title */}
               {title && (
-                <View className="px-5 pb-4">
+                <View className="px-5 pb-3">
                   <Text
                     style={{
                       fontSize: 13.5,
@@ -193,7 +194,7 @@ export function BottomSheet({
               )}
 
               {/* Options */}
-              <View>
+              <View style={{ flex: 1 }}>
                 {options.map((option, index) => {
                   const isSelected = selectedValue === option.value;
                   return (
@@ -231,10 +232,10 @@ export function BottomSheet({
                         <Text
                           style={{
                             fontSize: 13.5,
-                            color: option.destructive 
-                              ? colors.destructive 
-                              : isSelected 
-                                ? colors.primary 
+                            color: option.destructive
+                              ? colors.destructive
+                              : isSelected
+                                ? colors.primary
                                 : colors.foreground,
                             fontWeight: isSelected ? '600' : '400',
                             flex: 1,

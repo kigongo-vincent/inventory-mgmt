@@ -1293,7 +1293,7 @@ export default function UsersScreen() {
                 {
                   label: 'Add Product',
                   icon: 'cube.box.fill',
-                  onPress: () => router.push('/(tabs)/inventory?openAddModal=true'),
+                  onPress: () => router.push('/add-product'),
                 },
               ]
             : []),
