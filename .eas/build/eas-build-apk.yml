@@ -26,6 +26,14 @@ jobs:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
+      - name: 🔍 Debug
+        run: |
+          pwd
+          echo "--- .eas/build contents ---"
+          ls -la .eas/build/ || echo ".eas/build does not exist"
+          echo "--- eas.json ---"
+          cat eas.json
+
       - name: 🔨 Trigger APK Build
         run: eas build --platform android --profile apk --clear-cache --non-interactive --no-wait
 
