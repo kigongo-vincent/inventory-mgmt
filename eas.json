@@ -39,8 +39,7 @@
       "distribution": "internal",
       "channel": "production",
       "android": {
-        "buildType": "apk",
-        "config": "eas-build-apk.yml"
+        "buildType": "apk"
       },
       "env": {
         "API_BASE_URL": "https://inventory-api.bvrdesign.africa/api/v1",
