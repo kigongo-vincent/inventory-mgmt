@@ -38,10 +38,7 @@
     "apk": {
       "distribution": "internal",
       "channel": "production",
-      "android": {
-        "buildType": "apk",
-        "abiFilters": ["arm64-v8a", "x86_64"]
-      },
+      "config": "eas-build-apk.yml",
       "env": {
         "API_BASE_URL": "https://inventory-api.bvrdesign.africa/api/v1",
         "NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME": "dauv815j5",
