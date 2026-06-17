@@ -46,6 +46,7 @@
     "android": {
       "package": "com.inventorymgmt.app",
       "softwareKeyboardLayoutMode": "resize",
+      "buildArchitectures": ["arm64-v8a"],
       "adaptiveIcon": {
         "foregroundImage": "./assets/icon.jpg",
         "backgroundColor": "#ffffff"
