@@ -6,7 +6,7 @@ module.exports = ({ config }) => ({
     ...(config.extra || {}),
     apiBaseUrl: process.env.API_BASE_URL || 'https://inventory-api.bvrdesign.africa/api/v1',
     eas: {
-      projectId: '389c6510-1955-41bc-aef0-7e247e12fe94',
+      projectId: '1ebeea94-ebce-4d1a-b00b-f8c9e4e3ab9a',
     },
     cloudinary: {
       cloudinaryCloudName:
